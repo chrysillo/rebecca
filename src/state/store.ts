@@ -1,13 +1,21 @@
 import { create } from "zustand";
+import type { EdgeRef } from "@/geometry/box";
 import type { Id } from "@/model/types";
 import type { CreatorState } from "@/state/creator";
-import { type Command, type DocumentState, emptyDocument } from "@/state/document";
+import {
+	type Command,
+	type DocumentState,
+	emptyDocument,
+} from "@/state/document";
 import type { DragState } from "@/state/drag";
 import type { ExtrudeState } from "@/state/extrude";
 import * as history from "@/state/history";
 
-/** The active tool decides whether the selection shows the move/rotate gizmo. */
-export type Tool = "select" | "move";
+/**
+ * The active tool: "move" shows the move/rotate gizmo on the selection, "select" hides it,
+ * "measure" turns face clicks into dimension lines.
+ */
+export type Tool = "select" | "move" | "measure";
 
 type AppState = {
 	doc: DocumentState;
@@ -17,6 +25,10 @@ type AppState = {
 	/** A short message for the user (e.g. why an action was refused); cleared by the UI after a moment. */
 	notice: { text: string; id: number } | null;
 	tool: Tool;
+	/** Measure tool: the edge the next measurement starts from (the last one clicked). */
+	measureStart: EdgeRef | null;
+	/** Measure tool: the edge under the pointer. */
+	measureHover: EdgeRef | null;
 	/** The create wheel, when open. */
 	creator: CreatorState | null;
 	/** The stock entry used for the last new piece (preselected in the wheel next time). */
@@ -31,6 +43,8 @@ type AppState = {
 	showNotice: (text: string) => void;
 	clearNotice: () => void;
 	setTool: (tool: Tool) => void;
+	setMeasureStart: (edge: EdgeRef | null) => void;
+	setMeasureHover: (edge: EdgeRef | null) => void;
 	setCreator: (creator: CreatorState | null) => void;
 	setLastCreated: (stockId: Id) => void;
 };
@@ -42,6 +56,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	extrude: null,
 	notice: null,
 	tool: "move",
+	measureStart: null,
+	measureHover: null,
 	creator: null,
 	lastCreated: null,
 
@@ -63,7 +79,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	setExtrude: (extrude) => set({ extrude }),
 	showNotice: (text) => set({ notice: { text, id: Date.now() } }),
 	clearNotice: () => set({ notice: null }),
-	setTool: (tool) => set({ tool, drag: null }),
+	setTool: (tool) =>
+		set({ tool, drag: null, measureStart: null, measureHover: null }),
+	setMeasureStart: (measureStart) => set({ measureStart }),
+	setMeasureHover: (measureHover) => set({ measureHover }),
 	setCreator: (creator) => set({ creator }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
 }));

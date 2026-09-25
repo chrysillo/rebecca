@@ -8,10 +8,13 @@ import { FaceHighlight } from "@/scene/FaceHighlight";
 import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/Gizmos";
 import { gizmoFirstEvents } from "@/scene/gizmoEvents";
+import { LiveGaps } from "@/scene/LiveGaps";
+import { Measurements } from "@/scene/Measurements";
 import { Pieces } from "@/scene/Pieces";
 import { SnapGuide } from "@/scene/SnapGuide";
 import { ViewCube } from "@/scene/ViewCube";
 import { applyCommand } from "@/state/store";
+import { cancelMeasure } from "@/tools/measureSession";
 
 // The model is Z-up (floor at Z = 0). Make three.js agree so no axis swapping is needed.
 Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -41,7 +44,9 @@ export function Viewport() {
 			onContextMenu={(e) => e.preventDefault()}
 			// A left click that hits no piece or gizmo deselects.
 			onPointerMissed={(e) => {
-				if (e.button === 0) applyCommand(commands.clearSelection);
+				// Clicking empty space drops a half-made measurement, or else deselects.
+				if (e.button === 0 && !cancelMeasure())
+					applyCommand(commands.clearSelection);
 			}}
 		>
 			<color attach="background" args={["#ecebe7"]} />
@@ -51,6 +56,8 @@ export function Viewport() {
 			<Floor />
 			<Pieces />
 			<FaceHighlight />
+			<Measurements />
+			<LiveGaps />
 			<ExtrudeController />
 			<ExtrudeReadout />
 			<SnapGuide />

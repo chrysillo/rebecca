@@ -35,6 +35,13 @@ export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 			<path d="M5 3 L19 12 L12.5 13.5 L9.5 20 Z" />
 		</Icon>
 	),
+	// A ruler.
+	measureTool: (
+		<Icon>
+			<path d="M3 16 L16 3 L21 8 L8 21 Z" />
+			<path d="M7 12 L9 14 M10 9 L12 11 M13 6 L15 8" />
+		</Icon>
+	),
 	// A block with an arrow pulling its top face up.
 	extrude: (
 		<Icon>

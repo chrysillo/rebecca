@@ -8,7 +8,10 @@ type Item = { action: Action; label: string; tool?: Tool };
 /** Groups of buttons, separated by thin rules. */
 const GROUPS: Item[][] = [
 	[{ action: "newObject", label: "New object" }],
-	[{ action: "selectTool", label: "Select (hide gizmo)", tool: "select" }],
+	[
+		{ action: "selectTool", label: "Select (hide gizmo)", tool: "select" },
+		{ action: "measureTool", label: "Measure", tool: "measure" },
+	],
 	[{ action: "extrude", label: "Extrude face" }],
 	[
 		{ action: "undo", label: "Undo" },

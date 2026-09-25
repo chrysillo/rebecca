@@ -1,5 +1,6 @@
 import type { FaceRef } from "@/geometry/box";
 import { newId } from "@/model/createPiece";
+import type { Measurement } from "@/model/measurement";
 import type { Stock } from "@/model/stock";
 import type { Id, Piece, Pivot } from "@/model/types";
 
@@ -11,6 +12,8 @@ export type DocumentState = {
 	pieces: Record<Id, Piece>;
 	/** The project's sheet thicknesses and framing sections. */
 	stock: Record<Id, Stock>;
+	/** Saved dimension lines between faces. */
+	measurements: Record<Id, Measurement>;
 	/** Selected pieces, in the order they were added. */
 	selection: Id[];
 	/** Pivot used when several pieces are selected (a single piece uses its own). Resets when the selection changes. */
@@ -32,6 +35,7 @@ function starterStock(): Record<Id, Stock> {
 export const emptyDocument: DocumentState = {
 	pieces: {},
 	stock: starterStock(),
+	measurements: {},
 	selection: [],
 	groupPivot: "centre",
 	selectedFaces: [],

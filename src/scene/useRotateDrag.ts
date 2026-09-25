@@ -62,6 +62,7 @@ export function useRotateDrag() {
 			duplicate: isHeld("duplicate", e),
 			snapTarget: null,
 			rotation: { axis, startAngle: angle, degrees: 0 },
+			moveAxis: null,
 		});
 	};
 

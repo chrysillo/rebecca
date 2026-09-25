@@ -1,5 +1,5 @@
 import { Edges } from "@react-three/drei";
-import type { ThreeEvent } from "@react-three/fiber";
+import { type ThreeEvent, useThree } from "@react-three/fiber";
 import { Color } from "three";
 import { commands } from "@/commands";
 import { faceFromLocalNormal } from "@/geometry/box";
@@ -7,7 +7,9 @@ import { extrudableDimension } from "@/geometry/extrude";
 import { pieceSize } from "@/model/dimensions";
 import type { Piece } from "@/model/types";
 import { isGizmoObject } from "@/scene/gizmoStyle";
+import { pickEdge } from "@/scene/pickEdge";
 import { applyCommand, useAppStore } from "@/state/store";
+import { measureClick } from "@/tools/measureSession";
 
 const DEG = Math.PI / 180;
 
@@ -35,6 +37,7 @@ type Props = { piece: Piece; selected: boolean; ghost: boolean };
  */
 export function PieceMesh({ piece, selected, ghost }: Props) {
 	const size = pieceSize(piece);
+	const viewport = useThree((st) => st.size);
 	const { position: p, rotation: r } = piece;
 
 	const onClick = (e: ThreeEvent<MouseEvent>) => {
@@ -47,6 +50,11 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 		const hit = e.intersections.find((i) => i.object === e.eventObject);
 		if (!hit?.face) return;
 		const face = faceFromLocalNormal(piece.id, hit.face.normal);
+		// Measure tool: the click picks the edge of this face nearest the pointer; nothing gets selected.
+		if (useAppStore.getState().tool === "measure") {
+			measureClick(pickEdge(piece, face, e.camera, e.pointer, viewport));
+			return;
+		}
 		const shift = e.nativeEvent.shiftKey;
 		const piecesSelected = useAppStore.getState().doc.selection.length > 0;
 		// Shift+click while pieces are selected adds/removes this whole piece (multi-select to move/rotate).
@@ -69,10 +77,26 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 		);
 	};
 
+	// Measure tool: highlight the edge nearest the pointer, so you can see what a click will pick.
+	const onPointerMove = (e: ThreeEvent<PointerEvent>) => {
+		const { tool, setMeasureHover } = useAppStore.getState();
+		if (tool !== "measure" || ghost) return;
+		const hit = e.intersections.find((i) => i.object === e.eventObject);
+		if (!hit?.face) return;
+		e.stopPropagation();
+		const face = faceFromLocalNormal(piece.id, hit.face.normal);
+		setMeasureHover(pickEdge(piece, face, e.camera, e.pointer, viewport));
+	};
+
+	const onPointerOut = () => {
+		const { measureHover, setMeasureHover } = useAppStore.getState();
+		if (measureHover?.pieceId === piece.id) setMeasureHover(null);
+	};
+
 	const onDoubleClick = (e: ThreeEvent<MouseEvent>) => {
 		e.stopPropagation();
 		// With Shift, the two clicks before this already toggled the piece in and out; toggle it back.
-		if (ghost) return;
+		if (ghost || useAppStore.getState().tool === "measure") return;
 		applyCommand(
 			e.nativeEvent.shiftKey
 				? commands.togglePiece(piece.id)
@@ -85,6 +109,8 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 			position={[p.x, p.y, p.z]}
 			rotation={[r.x * DEG, r.y * DEG, r.z * DEG]}
 			onClick={onClick}
+			onPointerMove={onPointerMove}
+			onPointerOut={onPointerOut}
 			onDoubleClick={onDoubleClick}
 		>
 			<boxGeometry args={[size.x, size.y, size.z]} />

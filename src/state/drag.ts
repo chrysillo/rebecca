@@ -10,6 +10,8 @@ export type DragState = {
 	duplicate: boolean;
 	/** The face currently being snapped to, for the snap guide. */
 	snapTarget: FacePlane | null;
+	/** For a move drag: the world axis being dragged along (for the live gap dimensions). */
+	moveAxis: Axis | null;
 	/** For a rotation drag: where it started and the (stepped) angle so far, for the on-gizmo readout. */
 	rotation: { axis: Axis; startAngle: number; degrees: number } | null;
 };

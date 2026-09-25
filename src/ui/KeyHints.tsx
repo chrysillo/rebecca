@@ -3,6 +3,7 @@ const HINTS = [
 	["⇧ Click", "add/remove piece or face"],
 	["Double-click", "select object"],
 	["⌘A", "select all"],
+	["T", "measure (click edges)"],
 	["Right-drag", "orbit"],
 	["Middle-drag / ⇧ right-drag", "pan"],
 	["Wheel", "zoom"],

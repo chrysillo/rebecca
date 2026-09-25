@@ -3,6 +3,7 @@ export type Action =
 	| "newObject"
 	| "selectTool"
 	| "moveTool"
+	| "measureTool"
 	| "extrude"
 	| "selectAll"
 	| "delete"
@@ -26,6 +27,8 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 	newObject: [{ code: "KeyR", mod: false }],
 	selectTool: [{ code: "KeyV", mod: false }],
 	moveTool: [{ code: "KeyM", mod: false }],
+	// T for tape measure, as in SketchUp.
+	measureTool: [{ code: "KeyT", mod: false }],
 	extrude: [{ code: "KeyE", mod: false }],
 	selectAll: [{ code: "KeyA", mod: true, shift: false }],
 	delete: [{ code: "Delete" }, { code: "Backspace" }],

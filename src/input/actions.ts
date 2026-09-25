@@ -4,6 +4,7 @@ import { lastPointer } from "@/input/pointer";
 import { useAppStore } from "@/state/store";
 import { cancelCreator, openCreator } from "@/tools/creatorSession";
 import { startExtrude } from "@/tools/extrudeSession";
+import { cancelMeasure } from "@/tools/measureSession";
 
 const store = () => useAppStore.getState();
 
@@ -16,6 +17,9 @@ export const ACTIONS: Record<Action, () => void> = {
 	selectTool: () =>
 		store().setTool(store().tool === "select" ? "move" : "select"),
 	moveTool: () => store().setTool("move"),
+	// Toggles: pressing again goes back to the move tool.
+	measureTool: () =>
+		store().setTool(store().tool === "measure" ? "move" : "measure"),
 	extrude: startExtrude,
 	selectAll: () =>
 		store().apply(commands.selectPieces(Object.keys(store().doc.pieces))),
@@ -23,8 +27,9 @@ export const ACTIONS: Record<Action, () => void> = {
 	undo: () => store().undo(),
 	redo: () => store().redo(),
 	escape: () => {
-		// Escape closes the wheel or cancels a drag first; otherwise it deselects.
+		// Escape closes the wheel, a half-made measurement or a drag first; otherwise it deselects.
 		if (store().creator) cancelCreator();
+		else if (cancelMeasure()) return;
 		else if (store().drag) store().setDrag(null);
 		else store().apply(commands.clearSelection);
 	},

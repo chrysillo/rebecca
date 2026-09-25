@@ -56,6 +56,12 @@ export const deletePieces =
 			pieces,
 			selection: doc.selection.filter((id) => pieces[id]),
 			selectedFaces: doc.selectedFaces.filter((f) => pieces[f.pieceId]),
+			// A measurement can't outlive either piece it measures.
+			measurements: Object.fromEntries(
+				Object.entries(doc.measurements).filter(
+					([, m]) => pieces[m.from.pieceId] && pieces[m.to.pieceId],
+				),
+			),
 		};
 	};
 

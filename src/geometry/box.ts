@@ -137,3 +137,58 @@ export const sameFace = (a: FaceRef | null, b: FaceRef | null): boolean =>
 		a.pieceId === b.pieceId &&
 		a.axis === b.axis &&
 		a.sign === b.sign);
+
+/**
+ * One of a box's 12 edges: the local axis it runs along, and which side it sits on for each of
+ * the other two axes (in AXES order, e.g. for an X edge: `u` is its Y side, `v` its Z side).
+ */
+export type EdgeRef = { pieceId: Id; axis: Axis; u: 1 | -1; v: 1 | -1 };
+
+const otherAxes = (axis: Axis): [Axis, Axis] => {
+	const [u, v] = AXES.filter((a) => a !== axis);
+	return [u, v];
+};
+
+/** Both ends of an edge, in world space. */
+export function edgeEnds(piece: Piece, edge: EdgeRef): [Vec3, Vec3] {
+	const half = scale(pieceSize(piece), 0.5);
+	const [u, v] = otherAxes(edge.axis);
+	const matrix = pieceMatrix(piece);
+	const end = (along: 1 | -1) => {
+		const local = { x: 0, y: 0, z: 0 };
+		local[edge.axis] = along * half[edge.axis];
+		local[u] = edge.u * half[u];
+		local[v] = edge.v * half[v];
+		return fromVector3(toVector3(local).applyMatrix4(matrix));
+	};
+	return [end(-1), end(1)];
+}
+
+/** The middle of an edge, in world space. */
+export function edgeMidpoint(piece: Piece, edge: EdgeRef): Vec3 {
+	const [a, b] = edgeEnds(piece, edge);
+	return scale(add(a, b), 0.5);
+}
+
+/** The four edges around one face. */
+export function faceEdges(face: FaceRef): EdgeRef[] {
+	const [p, q] = otherAxes(face.axis);
+	// Each in-face axis gives two edges (one per side), running along the other in-face axis.
+	return [p, q].flatMap((side) =>
+		SIGNS.map((sign): EdgeRef => {
+			const along = side === p ? q : p;
+			const [u, v] = otherAxes(along);
+			const signOf = (a: Axis): 1 | -1 => (a === face.axis ? face.sign : sign);
+			return { pieceId: face.pieceId, axis: along, u: signOf(u), v: signOf(v) };
+		}),
+	);
+}
+
+export const sameEdge = (a: EdgeRef | null, b: EdgeRef | null): boolean =>
+	a === b ||
+	(!!a &&
+		!!b &&
+		a.pieceId === b.pieceId &&
+		a.axis === b.axis &&
+		a.u === b.u &&
+		a.v === b.v);

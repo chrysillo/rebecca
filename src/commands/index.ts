@@ -1,4 +1,5 @@
 /** Every way the document can change. UI, keybindings and tools all go through these. */
+import { addMeasurement, removeMeasurement } from "@/commands/measurements";
 import {
 	addPiece,
 	deletePieces,
@@ -26,6 +27,8 @@ import {
 import { setTransforms } from "@/commands/transform";
 
 export const commands = {
+	addMeasurement,
+	removeMeasurement,
 	addPiece,
 	deletePieces,
 	duplicatePiecesTo,

@@ -17,7 +17,7 @@ export function FaceHighlight() {
 	return doc.selectedFaces.map((face) => {
 		const piece = preview[face.pieceId] ?? doc.pieces[face.pieceId];
 		return piece ? (
-			<SelectedFace
+			<FaceTint
 				key={`${face.pieceId}:${face.axis}${face.sign}`}
 				piece={piece}
 				face={face}
@@ -26,7 +26,16 @@ export function FaceHighlight() {
 	});
 }
 
-function SelectedFace({ piece, face }: { piece: Piece; face: FaceRef }) {
+/** Tints and outlines one face. Also used for the first face of a measurement in progress. */
+export function FaceTint({
+	piece,
+	face,
+	color = FACE_COLOR,
+}: {
+	piece: Piece;
+	face: FaceRef;
+	color?: string;
+}) {
 	const corners = useMemo(
 		() => faceCorners(piece, face.axis, face.sign),
 		[piece, face],
@@ -54,7 +63,7 @@ function SelectedFace({ piece, face }: { piece: Piece; face: FaceRef }) {
 		<group>
 			<mesh geometry={geometry} renderOrder={10}>
 				<meshBasicMaterial
-					color={FACE_COLOR}
+					color={color}
 					transparent
 					opacity={0.45}
 					depthWrite={false}
@@ -63,12 +72,7 @@ function SelectedFace({ piece, face }: { piece: Piece; face: FaceRef }) {
 					toneMapped={false}
 				/>
 			</mesh>
-			<Line
-				points={outline}
-				color={FACE_COLOR}
-				lineWidth={2.5}
-				renderOrder={11}
-			/>
+			<Line points={outline} color={color} lineWidth={2.5} renderOrder={11} />
 		</group>
 	);
 }

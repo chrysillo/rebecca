@@ -170,3 +170,79 @@ describe("stock", () => {
 		expect(next.selection).toEqual([piece.id]);
 	});
 });
+
+describe("measurements", () => {
+	// Top edge across a rail's end / start (runs along Y).
+	const xEnd = (pieceId: string) => ({
+		pieceId,
+		axis: "y" as const,
+		u: 1 as const,
+		v: 1 as const,
+	});
+	const xStart = (pieceId: string) => ({
+		pieceId,
+		axis: "y" as const,
+		u: -1 as const,
+		v: 1 as const,
+	});
+
+	it("adds and removes a measurement", () => {
+		const doc = docWith([rail({ id: "a" }), rail({ id: "b" })]);
+		const added = commands.addMeasurement(xEnd("a"), xStart("b"))(doc);
+		const [m] = Object.values(added.measurements);
+		expect(m.from).toEqual(xEnd("a"));
+		expect(
+			Object.keys(commands.removeMeasurement(m.id)(added).measurements),
+		).toHaveLength(0);
+	});
+
+	it("ignores measuring an edge against itself", () => {
+		const doc = docWith([rail({ id: "a" })]);
+		expect(commands.addMeasurement(xEnd("a"), xEnd("a"))(doc)).toBe(doc);
+	});
+
+	it("drops measurements when a piece they use is deleted", () => {
+		const doc = commands.addMeasurement(
+			xEnd("a"),
+			xStart("b"),
+		)(docWith([rail({ id: "a" }), rail({ id: "b" })]));
+		expect(
+			Object.keys(commands.deletePieces(["b"])(doc).measurements),
+		).toHaveLength(0);
+	});
+});
+
+describe("measure tool (chaining)", () => {
+	const edge = (pieceId: string, u: 1 | -1) => ({
+		pieceId,
+		axis: "y" as const,
+		u,
+		v: 1 as const,
+	});
+
+	beforeEach(() => {
+		useAppStore.setState({
+			doc: docWith([rail({ id: "a" }), rail({ id: "b" })]),
+			history: emptyHistory,
+			measureStart: null,
+		});
+	});
+
+	it("measures between consecutive clicks and chains on from the last edge", async () => {
+		const { measureClick, cancelMeasure } = await import(
+			"@/tools/measureSession"
+		);
+		measureClick(edge("a", -1));
+		measureClick(edge("a", 1));
+		measureClick(edge("b", 1));
+		const all = Object.values(useAppStore.getState().doc.measurements);
+		expect(
+			all.map((m) => [m.from.pieceId, m.from.u, m.to.pieceId, m.to.u]),
+		).toEqual([
+			["a", -1, "a", 1],
+			["a", 1, "b", 1],
+		]);
+		expect(cancelMeasure()).toBe(true);
+		expect(useAppStore.getState().measureStart).toBeNull();
+	});
+});
