@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { pieceAabb } from "@/geometry/box";
 import type { FramingStock } from "@/model/stock";
+import { fromProjectFile, toProjectFile } from "@/state/document";
 import { emptyHistory } from "@/state/history";
 import { useAppStore } from "@/state/store";
 import { docWith, RAIL_45x90, rail, sheet } from "@/test/fixtures";
@@ -212,7 +213,7 @@ describe("measurements", () => {
 	});
 });
 
-describe("measure tool (chaining)", () => {
+describe("measure tool", () => {
 	const edge = (pieceId: string, u: 1 | -1) => ({
 		pieceId,
 		axis: "y" as const,
@@ -225,25 +226,24 @@ describe("measure tool (chaining)", () => {
 			doc: docWith([rail({ id: "a" }), rail({ id: "b" })]),
 			history: emptyHistory,
 			measureStart: null,
+			tool: "measure",
 		});
 	});
 
-	it("measures between consecutive clicks and chains on from the last edge", async () => {
+	it("measures between two clicks, then goes back to the select tool", async () => {
 		const { measureClick, cancelMeasure } = await import(
 			"@/tools/measureSession"
 		);
 		measureClick(edge("a", -1));
+		expect(useAppStore.getState().tool).toBe("measure");
 		measureClick(edge("a", 1));
-		measureClick(edge("b", 1));
 		const all = Object.values(useAppStore.getState().doc.measurements);
 		expect(
 			all.map((m) => [m.from.pieceId, m.from.u, m.to.pieceId, m.to.u]),
-		).toEqual([
-			["a", -1, "a", 1],
-			["a", 1, "b", 1],
-		]);
-		expect(cancelMeasure()).toBe(true);
+		).toEqual([["a", -1, "a", 1]]);
+		expect(useAppStore.getState().tool).toBe("select");
 		expect(useAppStore.getState().measureStart).toBeNull();
+		expect(cancelMeasure()).toBe(false);
 	});
 });
 
@@ -277,5 +277,60 @@ describe("joints", () => {
 		expect(commands.deletePieces(["housed"])(joined).joints).toEqual({});
 		const [j] = Object.values(joined.joints);
 		expect(commands.removeJoint(j.id)(joined).joints).toEqual({});
+	});
+});
+
+describe("groups", () => {
+	const three = () =>
+		docWith([rail({ id: "a" }), rail({ id: "b" }), rail({ id: "c" })]);
+
+	it("groups the selection, and selecting one member selects the group", () => {
+		const doc = commands.groupSelection(
+			commands.selectPieces(["a", "b"])(three()),
+		);
+		const [group] = Object.values(doc.groups);
+		expect(group.pieceIds).toEqual(["a", "b"]);
+		expect(group.name).toBe("Group 1");
+		const picked = commands.selectObjects(["b"])(commands.clearSelection(doc));
+		expect(picked.selection).toEqual(["a", "b"]);
+	});
+
+	it("needs two pieces, and ungroups", () => {
+		const one = commands.selectPieces(["a"])(three());
+		expect(commands.groupSelection(one)).toBe(one);
+		const grouped = commands.groupSelection(
+			commands.selectPieces(["a", "b"])(three()),
+		);
+		expect(commands.ungroupSelection(grouped).groups).toEqual({});
+	});
+
+	it("drops a group left with one piece after a delete", () => {
+		const grouped = commands.groupSelection(
+			commands.selectPieces(["a", "b"])(three()),
+		);
+		expect(commands.deletePieces(["b"])(grouped).groups).toEqual({});
+	});
+
+	it("copies a whole group as a new group", () => {
+		const grouped = commands.groupSelection(
+			commands.selectPieces(["a", "b"])(three()),
+		);
+		const { a, b } = grouped.pieces;
+		const copied = commands.duplicatePiecesTo({
+			a: { position: a.position, rotation: a.rotation },
+			b: { position: b.position, rotation: b.rotation },
+		})(grouped);
+		const groups = Object.values(copied.groups);
+		expect(groups).toHaveLength(2);
+		expect(groups[1].pieceIds).toEqual(copied.selection);
+	});
+
+	it("saves and loads groups", () => {
+		const grouped = commands.groupSelection(
+			commands.selectPieces(["a", "b"])(three()),
+		);
+		expect(fromProjectFile(toProjectFile(grouped)).groups).toEqual(
+			grouped.groups,
+		);
 	});
 });

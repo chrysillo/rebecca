@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import type { Action } from "@/input/keymap";
 
-/** 20px line icons for the tool strip, drawn inline (no icon library). */
+/** 20px line icons for the tool strip and export bar, drawn inline (no icon library). */
 function Icon({ children }: { children: ReactNode }) {
 	return (
 		<svg
@@ -20,7 +20,7 @@ function Icon({ children }: { children: ReactNode }) {
 	);
 }
 
-/** Icons for the actions that have a tool-strip button (others are keyboard-only). */
+/** Icons for the actions that have a button, in the tool strip or export bar (others are keyboard-only). */
 export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 	// A box with a plus: add a piece.
 	newObject: (
@@ -57,16 +57,26 @@ export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 			<path d="M9 3 V9" />
 		</Icon>
 	),
-	undo: (
+	// Two boxes inside a dashed frame.
+	group: (
 		<Icon>
-			<path d="M9 14 L4 9 L9 4" />
-			<path d="M4 9 H14 A6 6 0 0 1 14 21 H10" />
+			<path d="M3 3 H6 M9 3 H12 M15 3 H18 M21 3 V6 M21 9 V12 M21 15 V18 M21 21 H18 M15 21 H12 M9 21 H6 M3 21 V18 M3 15 V12 M3 9 V6" />
+			<path d="M7 7 H12 V12 H7 Z M12 12 H17 V17 H12 Z" />
 		</Icon>
 	),
-	redo: (
+	// A clipboard with list lines: copy the cut list.
+	exportCutList: (
 		<Icon>
-			<path d="M15 14 L20 9 L15 4" />
-			<path d="M20 9 H10 A6 6 0 0 0 10 21 H14" />
+			<path d="M8 4 H16 V6 H8 Z" />
+			<path d="M6 5 H18 V21 H6 Z" />
+			<path d="M9 10 H15 M9 13 H15 M9 16 H13" />
+		</Icon>
+	),
+	// A picture frame with a mountain: image export.
+	exportViews: (
+		<Icon>
+			<path d="M3 5 H21 V19 H3 Z" />
+			<path d="M3 16 L9 10 L14 15 L17 12 L21 16" />
 		</Icon>
 	),
 };

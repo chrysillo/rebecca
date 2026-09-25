@@ -4,6 +4,7 @@ import { MOUSE, Object3D } from "three";
 import { commands } from "@/commands";
 import { ExtrudeController } from "@/scene/ExtrudeController";
 import { ExtrudeReadout } from "@/scene/ExtrudeReadout";
+import { FaceArrow } from "@/scene/FaceArrow";
 import { FaceHighlight } from "@/scene/FaceHighlight";
 import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/Gizmos";
@@ -15,7 +16,8 @@ import { Pieces } from "@/scene/Pieces";
 import { SnapGuide } from "@/scene/SnapGuide";
 import { ScreenProjection } from "@/scene/screenProjection";
 import { ViewCube } from "@/scene/ViewCube";
-import { applyCommand } from "@/state/store";
+import { ViewExporter } from "@/scene/ViewExporter";
+import { applyCommand, useAppStore } from "@/state/store";
 import { cancelMeasure } from "@/tools/measureSession";
 
 // The model is Z-up (floor at Z = 0). Make three.js agree so no axis swapping is needed.
@@ -33,6 +35,8 @@ const MOUSE_BUTTONS = {
 
 /** The 3D view. It only renders application state; it never owns it. */
 export function Viewport() {
+	// While exporting views, only the pieces are drawn.
+	const exporting = useAppStore((s) => s.exporting);
 	return (
 		<Canvas
 			events={gizmoFirstEvents}
@@ -55,17 +59,22 @@ export function Viewport() {
 			<ambientLight intensity={1.2} />
 			<directionalLight position={[3000, -2000, 5000]} intensity={1.6} />
 			<directionalLight position={[-3000, 2500, 2000]} intensity={0.5} />
-			<Floor />
 			<Pieces />
-			<JoinOverlap />
 			<ScreenProjection />
-			<FaceHighlight />
-			<Measurements />
-			<LiveGaps />
 			<ExtrudeController />
-			<ExtrudeReadout />
-			<SnapGuide />
-			<Gizmos />
+			<ViewExporter />
+			{/* Hidden, not unmounted, while exporting: unmounting the HTML labels mid-render breaks them. */}
+			<group visible={!exporting}>
+				<Floor />
+				<JoinOverlap />
+				<FaceHighlight />
+				<Measurements />
+				<LiveGaps />
+				<ExtrudeReadout />
+				<SnapGuide />
+				<Gizmos />
+				<FaceArrow />
+			</group>
 			<OrbitControls
 				makeDefault
 				target={[600, 300, 0]}

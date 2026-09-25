@@ -15,6 +15,7 @@ export function Pieces() {
 	const drag = useAppStore((s) => s.drag);
 	const extrude = useAppStore((s) => s.extrude);
 	const joiner = useAppStore((s) => s.joiner);
+	const exporting = useAppStore((s) => s.exporting);
 	const items = useMemo(() => {
 		const shown = displayPieces(joinPreview(doc, joiner), drag, extrude);
 		if (!joiner) return shown;
@@ -35,5 +36,11 @@ export function Pieces() {
 		});
 	}, [doc, drag, extrude, joiner]);
 
-	return items.map((item) => <PieceMesh key={item.piece.id} {...item} />);
+	return items.map((item) => (
+		<PieceMesh
+			key={item.piece.id}
+			{...item}
+			selected={item.selected && !exporting}
+		/>
+	));
 }

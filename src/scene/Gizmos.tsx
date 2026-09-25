@@ -15,7 +15,7 @@ import {
 import { applyCommand, useAppStore } from "@/state/store";
 
 /**
- * With the Move tool, the selection gets one gizmo: arrows to move along an axis and curved arcs
+ * With the Select tool, the selection gets one gizmo: arrows to move along an axis and curved arcs
  * to rotate about it. It sits at the pivot and follows any drag preview. Dragging the white centre
  * dot moves the pivot: a single piece's own, or the group pivot when several pieces are selected.
  */
@@ -27,7 +27,8 @@ export function Gizmos() {
 	const [pivotPreview, setPivotPreview] = useState<Pivot | null>(null);
 
 	const pieces = selectedPiecesPreviewed(doc, drag);
-	const shown = tool === "move" && pieces.length > 0;
+	const busy = useAppStore((s) => s.extrude !== null || s.joiner !== null);
+	const shown = tool === "select" && !busy && pieces.length > 0;
 	const origin = shown
 		? selectionPivot(pieces, doc.groupPivot, pivotPreview)
 		: null;

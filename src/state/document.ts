@@ -1,5 +1,6 @@
 import type { FaceRef } from "@/geometry/box";
 import { newId } from "@/model/createPiece";
+import type { Group } from "@/model/group";
 import type { Joint } from "@/model/joint";
 import type { Measurement } from "@/model/measurement";
 import type { Stock } from "@/model/stock";
@@ -17,6 +18,8 @@ export type DocumentState = {
 	measurements: Record<Id, Measurement>;
 	/** Cuts: one piece's box subtracted from another. */
 	joints: Record<Id, Joint>;
+	/** Pieces picked and moved together as one object. */
+	groups: Record<Id, Group>;
 	/** Selected pieces, in the order they were added. */
 	selection: Id[];
 	/** Pivot used when several pieces are selected (a single piece uses its own). Resets when the selection changes. */
@@ -42,6 +45,7 @@ export function newDocument(): DocumentState {
 		stock: starterStock(),
 		measurements: {},
 		joints: {},
+		groups: {},
 		selection: [],
 		groupPivot: "centre",
 		selectedFaces: [],
@@ -59,6 +63,8 @@ export type ProjectFile = {
 	stock: Record<Id, Stock>;
 	measurements: Record<Id, Measurement>;
 	joints: Record<Id, Joint>;
+	/** Optional: files saved before grouping existed have none. */
+	groups?: Record<Id, Group>;
 };
 
 export const toProjectFile = (doc: DocumentState): ProjectFile => ({
@@ -67,6 +73,7 @@ export const toProjectFile = (doc: DocumentState): ProjectFile => ({
 	stock: doc.stock,
 	measurements: doc.measurements,
 	joints: doc.joints,
+	groups: doc.groups,
 });
 
 /** Reads a saved project, filling in anything an older file lacks. Throws on a file it can't read. */
@@ -81,6 +88,7 @@ export function fromProjectFile(json: unknown): DocumentState {
 		stock: file.stock ?? starterStock(),
 		measurements: file.measurements ?? {},
 		joints: file.joints ?? {},
+		groups: file.groups ?? {},
 		selection: [],
 		groupPivot: "centre",
 		selectedFaces: [],

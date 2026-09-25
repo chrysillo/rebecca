@@ -44,6 +44,42 @@ export function computeMove(input: MoveInput): MoveResult {
 	return { transforms, snapTarget };
 }
 
+export type PlaneMoveInput = Omit<MoveInput, "axis" | "distance"> & {
+	/** Raw pointer travel along each of the two world axes in the drag plane, in mm. */
+	travel: Partial<Record<Axis, number>>;
+};
+
+/**
+ * Moving a piece by dragging it across a plane: each in-plane axis is stepped and snapped on its
+ * own (as if dragging that gizmo arrow), then the two are combined.
+ */
+export function computePlaneMove(input: PlaneMoveInput): MoveResult {
+	let offset: Vec3 = { x: 0, y: 0, z: 0 };
+	let snapTarget: FacePlane | null = null;
+	for (const [axis, distance] of Object.entries(input.travel) as [
+		Axis,
+		number,
+	][]) {
+		const direction = axisVector(axis);
+		const resolved = resolveDistance({ ...input, axis, distance }, direction);
+		offset = add(offset, scale(direction, resolved.distance));
+		snapTarget ??= resolved.snapTarget;
+	}
+
+	const transforms: Record<Id, Transform> = {};
+	for (const piece of input.pieces) {
+		const moved = clampToFloor({
+			...piece,
+			position: add(piece.position, offset),
+		});
+		transforms[piece.id] = {
+			position: moved.position,
+			rotation: moved.rotation,
+		};
+	}
+	return { transforms, snapTarget };
+}
+
 function resolveDistance(
 	input: MoveInput,
 	direction: Vec3,

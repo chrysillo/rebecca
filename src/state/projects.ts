@@ -6,7 +6,6 @@ import {
 	loadProject,
 	ProjectApiError,
 	type ProjectInfo,
-	saveProject,
 } from "@/persistence/api";
 import { flush, markSaved } from "@/persistence/autosave";
 import { isValidProjectName, nextFreeName } from "@/persistence/projectName";
@@ -14,7 +13,6 @@ import {
 	type DocumentState,
 	fromProjectFile,
 	newDocument,
-	toProjectFile,
 } from "@/state/document";
 import * as history from "@/state/history";
 import { useAppStore } from "@/state/store";
@@ -41,6 +39,26 @@ export const useProjectsStore = create<ProjectsState>()(() => ({
 
 type Session = { doc: DocumentState; history: history.History };
 const sessions = new Map<string, Session>();
+
+/**
+ * New projects that have no file yet. A draft is only written once it's edited (autosave does
+ * that), so opening and closing new projects doesn't leave empty files behind.
+ */
+const drafts = new Set<string>();
+
+/** Autosave has written this project, so it's no longer a draft. */
+export function markWritten(name: string) {
+	drafts.delete(name);
+}
+
+/** "Untitled", "Untitled 2", …: a project the user hasn't named. */
+const isUntitled = (name: string) => /^Untitled( \d+)?$/.test(name);
+
+const isEmpty = (doc: DocumentState) => Object.keys(doc.pieces).length === 0;
+
+/** An unnamed project with nothing in it can be reused or thrown away. */
+const isThrowaway = (name: string, doc: DocumentState) =>
+	isUntitled(name) && isEmpty(doc);
 
 const TABS_KEY = "rebecca.projectTabs";
 
@@ -115,19 +133,58 @@ export async function openProject(name: string): Promise<void> {
 	show(name, next);
 }
 
-/** Creates an empty project on disk, named "Untitled", "Untitled 2", …, and opens it. */
+/** The document of an open project (the active one lives in the app store). */
+function openDoc(name: string): DocumentState | undefined {
+	return name === useProjectsStore.getState().active
+		? useAppStore.getState().doc
+		: sessions.get(name)?.doc;
+}
+
+/**
+ * Opens an empty project named "Untitled", "Untitled 2", …. An empty unnamed project that is
+ * already open, or saved, is reused rather than adding another. A new one stays a draft (no file)
+ * until it's edited.
+ */
 export async function newProject(): Promise<void> {
 	if (!useProjectsStore.getState().available) return;
 	try {
-		const taken = (await listProjects()).map((p) => p.name);
-		const name = nextFreeName([...taken, ...useProjectsStore.getState().tabs]);
-		const doc = newDocument();
-		await saveProject(name, toProjectFile(doc));
-		sessions.set(name, { doc, history: history.emptyHistory });
+		const { tabs } = useProjectsStore.getState();
+		const openEmpty = tabs.find((t) => {
+			const doc = openDoc(t);
+			return doc && isThrowaway(t, doc);
+		});
+		if (openEmpty) return openProject(openEmpty);
+
+		const saved = (await listProjects()).map((p) => p.name);
+		for (const name of saved.filter(
+			(n) => isUntitled(n) && !tabs.includes(n),
+		)) {
+			const doc = await loadProject(name)
+				.then(fromProjectFile)
+				.catch(() => null);
+			if (doc && isEmpty(doc)) {
+				sessions.set(name, { doc, history: history.emptyHistory });
+				return openProject(name);
+			}
+		}
+
+		const name = nextFreeName([...saved, ...tabs]);
+		drafts.add(name);
+		sessions.set(name, { doc: newDocument(), history: history.emptyHistory });
 		await openProject(name);
 	} catch (err) {
 		notify(`Couldn't create a project: ${errorText(err)}`);
 	}
+}
+
+/** Deletes the file of an unnamed project left empty, so it doesn't linger. */
+async function discardIfThrowaway(
+	name: string,
+	doc: DocumentState | undefined,
+) {
+	if (!doc || !isThrowaway(name, doc)) return;
+	if (drafts.delete(name)) return;
+	await apiDelete(name).catch(() => {});
 }
 
 /** Closes a tab (the file stays). Closing the last one starts a new project. */
@@ -135,6 +192,9 @@ export async function closeTab(name: string): Promise<void> {
 	const { tabs, active } = useProjectsStore.getState();
 	const index = tabs.indexOf(name);
 	if (index < 0) return;
+	const doc = openDoc(name);
+	// Closing the only tab on an empty unnamed project: nothing to replace it with.
+	if (tabs.length === 1 && doc && isThrowaway(name, doc)) return;
 	if (name === active) {
 		const neighbour = tabs[index + 1] ?? tabs[index - 1];
 		if (neighbour) await openProject(neighbour);
@@ -148,6 +208,7 @@ export async function closeTab(name: string): Promise<void> {
 	useProjectsStore.setState((s) => ({
 		tabs: s.tabs.filter((t) => t !== name),
 	}));
+	await discardIfThrowaway(name, doc);
 }
 
 /** Moves to the next (or previous) tab, wrapping round. */
@@ -171,7 +232,14 @@ export async function renameProject(
 	}
 	try {
 		if (from === useProjectsStore.getState().active) await flush();
-		await apiRename(from, to);
+		if (drafts.has(from)) {
+			// No file yet: just check the name is free; the file is written on the first edit.
+			const taken = (await listProjects()).map((p) => p.name);
+			if (taken.includes(to) || useProjectsStore.getState().tabs.includes(to))
+				throw new ProjectApiError(409, "Name taken");
+			drafts.delete(from);
+			drafts.add(to);
+		} else await apiRename(from, to);
 	} catch (err) {
 		notify(
 			err instanceof ProjectApiError && err.status === 409
@@ -217,8 +285,20 @@ export async function bootProjects(): Promise<void> {
 		notify("Projects can't be saved here (run npm run dev)");
 		return;
 	}
-	const onDisk = new Set(saved.map((p) => p.name));
+	// Tidy up empty unnamed projects from earlier sessions (other than ones reopening now).
 	const stored = readStoredTabs();
+	for (const { name } of saved.filter(
+		(p) => isUntitled(p.name) && !stored.tabs.includes(p.name),
+	)) {
+		const doc = await loadProject(name)
+			.then(fromProjectFile)
+			.catch(() => null);
+		if (doc && isEmpty(doc)) {
+			await apiDelete(name).catch(() => {});
+			saved = saved.filter((p) => p.name !== name);
+		}
+	}
+	const onDisk = new Set(saved.map((p) => p.name));
 	const tabs = stored.tabs.filter((t) => onDisk.has(t));
 	const first =
 		(stored.active && tabs.includes(stored.active) ? stored.active : tabs[0]) ??

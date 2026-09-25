@@ -1,4 +1,11 @@
 /** Every way the document can change. UI, keybindings and tools all go through these. */
+import {
+	groupSelection,
+	renameGroup,
+	selectObjects,
+	toggleObject,
+	ungroupSelection,
+} from "@/commands/groups";
 import { flipJoint, joinInto, removeJoint } from "@/commands/joints";
 import { addMeasurement, removeMeasurement } from "@/commands/measurements";
 import {
@@ -28,6 +35,11 @@ import {
 import { setTransforms } from "@/commands/transform";
 
 export const commands = {
+	groupSelection,
+	ungroupSelection,
+	renameGroup,
+	selectObjects,
+	toggleObject,
 	flipJoint,
 	joinInto,
 	removeJoint,

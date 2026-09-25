@@ -5,13 +5,17 @@ import { useAppStore } from "@/state/store";
 const store = () => useAppStore.getState();
 
 /**
- * Measure tool: the first edge click sets where the measurement starts; each next click adds a
- * measurement from there to the clicked edge (one undo step) and chains on from it.
+ * Measure tool: the first edge click sets where the measurement starts; the second adds a
+ * measurement from there to the clicked edge (one undo step) and goes back to the select tool.
  */
 export function measureClick(edge: EdgeRef) {
-	const { measureStart, setMeasureStart, apply } = store();
-	if (measureStart) apply(commands.addMeasurement(measureStart, edge));
-	setMeasureStart(edge);
+	const { measureStart, setMeasureStart, apply, setTool } = store();
+	if (!measureStart) {
+		setMeasureStart(edge);
+		return;
+	}
+	apply(commands.addMeasurement(measureStart, edge));
+	setTool("select");
 }
 
 /** Ends a measurement chain. Returns true if one was in progress. */

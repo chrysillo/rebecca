@@ -13,10 +13,10 @@ import * as history from "@/state/history";
 import type { JoinerState } from "@/state/joiner";
 
 /**
- * The active tool: "move" shows the move/rotate gizmo on the selection, "select" hides it,
+ * The active tool: "select" picks things and shows the move/rotate gizmo on selected pieces,
  * "measure" turns face clicks into dimension lines.
  */
-export type Tool = "select" | "move" | "measure";
+export type Tool = "select" | "measure";
 
 type AppState = {
 	doc: DocumentState;
@@ -36,6 +36,8 @@ type AppState = {
 	joiner: JoinerState | null;
 	/** The stock entry used for the last new piece (preselected in the wheel next time). */
 	lastCreated: Id | null;
+	/** True while views are being exported: gizmos, grid and overlays are hidden. */
+	exporting: boolean;
 
 	/** Runs a command and records an undo step if the document changed. */
 	apply: (command: Command) => void;
@@ -51,6 +53,7 @@ type AppState = {
 	setCreator: (creator: CreatorState | null) => void;
 	setJoiner: (joiner: JoinerState | null) => void;
 	setLastCreated: (stockId: Id) => void;
+	setExporting: (exporting: boolean) => void;
 };
 
 export const useAppStore = create<AppState>()((set, get) => ({
@@ -59,12 +62,13 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	drag: null,
 	extrude: null,
 	notice: null,
-	tool: "move",
+	tool: "select",
 	measureStart: null,
 	measureHover: null,
 	creator: null,
 	joiner: null,
 	lastCreated: null,
+	exporting: false,
 
 	apply: (command) => {
 		const { doc } = get();
@@ -91,6 +95,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	setCreator: (creator) => set({ creator }),
 	setJoiner: (joiner) => set({ joiner }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
+	setExporting: (exporting) => set({ exporting }),
 }));
 
 /** Shorthand for non-React callers (keybindings, tools). */

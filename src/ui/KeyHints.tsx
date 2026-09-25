@@ -3,7 +3,7 @@ const HINTS = [
 	["⇧ Click", "add/remove piece or face"],
 	["Double-click", "select object"],
 	["⌘A", "select all"],
-	["T", "measure (click edges)"],
+	["T", "measure (click two edges)"],
 	["Right-drag", "orbit"],
 	["Middle-drag / ⇧ right-drag", "pan"],
 	["Wheel", "zoom"],
@@ -11,6 +11,8 @@ const HINTS = [
 	["Alt + move/rotate", "duplicate"],
 	["E", "extrude face (type mm, Enter)"],
 	["J", "join: cut overlapping pieces"],
+	["⌘G / ⇧⌘G", "group / ungroup"],
+	["⌥ Click", "one piece inside a group"],
 	["Esc", "deselect / cancel"],
 ] as const;
 

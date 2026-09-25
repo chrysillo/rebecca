@@ -1,6 +1,6 @@
 import { saveProject } from "@/persistence/api";
 import { type DocumentState, toProjectFile } from "@/state/document";
-import { useProjectsStore } from "@/state/projects";
+import { markWritten, useProjectsStore } from "@/state/projects";
 import { useAppStore } from "@/state/store";
 
 /**
@@ -12,7 +12,7 @@ const DELAY_MS = 400;
 
 type Saved = Pick<
 	DocumentState,
-	"pieces" | "stock" | "measurements" | "joints"
+	"pieces" | "stock" | "measurements" | "joints" | "groups"
 >;
 
 /** The document parts last written (or loaded) for the active project. */
@@ -25,14 +25,16 @@ const savedParts = ({
 	stock,
 	measurements,
 	joints,
-}: DocumentState): Saved => ({ pieces, stock, measurements, joints });
+	groups,
+}: DocumentState): Saved => ({ pieces, stock, measurements, joints, groups });
 
 const isDirty = (doc: DocumentState) =>
 	baseline !== null &&
 	(doc.pieces !== baseline.pieces ||
 		doc.stock !== baseline.stock ||
 		doc.measurements !== baseline.measurements ||
-		doc.joints !== baseline.joints);
+		doc.joints !== baseline.joints ||
+		doc.groups !== baseline.groups);
 
 const setStatus = (saveStatus: "saved" | "saving" | "error") =>
 	useProjectsStore.setState({ saveStatus });
@@ -59,6 +61,7 @@ export async function flush(): Promise<void> {
 	inFlight = saveProject(name, toProjectFile(doc))
 		.then(() => {
 			baseline = parts;
+			markWritten(name);
 			// A change made while writing gets its own save.
 			setStatus(isDirty(useAppStore.getState().doc) ? "saving" : "saved");
 		})

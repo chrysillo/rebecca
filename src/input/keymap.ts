@@ -2,10 +2,13 @@
 export type Action =
 	| "newObject"
 	| "selectTool"
-	| "moveTool"
 	| "measureTool"
 	| "extrude"
 	| "join"
+	| "exportCutList"
+	| "exportViews"
+	| "group"
+	| "ungroup"
 	| "selectAll"
 	| "delete"
 	| "undo"
@@ -30,12 +33,18 @@ export type KeyBinding = {
 /** The first binding of each action is the one shown in the UI. */
 export const KEYMAP: Record<Action, KeyBinding[]> = {
 	newObject: [{ code: "KeyR", mod: false }],
-	selectTool: [{ code: "KeyV", mod: false }],
-	moveTool: [{ code: "KeyM", mod: false }],
+	selectTool: [
+		{ code: "KeyV", mod: false },
+		{ code: "KeyM", mod: false },
+	],
 	// T for tape measure, as in SketchUp.
 	measureTool: [{ code: "KeyT", mod: false }],
 	extrude: [{ code: "KeyE", mod: false }],
 	join: [{ code: "KeyJ", mod: false }],
+	group: [{ code: "KeyG", mod: true, shift: false }],
+	ungroup: [{ code: "KeyG", mod: true, shift: true }],
+	exportViews: [{ code: "KeyP", alt: true, mod: false }],
+	exportCutList: [{ code: "KeyL", alt: true, mod: false }],
 	selectAll: [{ code: "KeyA", mod: true, shift: false }],
 	delete: [{ code: "Delete" }, { code: "Backspace" }],
 	undo: [{ code: "KeyZ", mod: true, shift: false }],

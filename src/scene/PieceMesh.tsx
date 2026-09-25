@@ -8,15 +8,21 @@ import {
 	type Intersection,
 } from "three";
 import { commands } from "@/commands";
-import { type FaceRef, faceFromLocalNormal } from "@/geometry/box";
+import {
+	type FaceRef,
+	faceFromLocalNormal,
+	rotateVector,
+} from "@/geometry/box";
 import { cutGeometry } from "@/geometry/cut";
 import { featureEdges } from "@/geometry/edges";
 import { extrudableDimension } from "@/geometry/extrude";
 import type { Vec3 } from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
+import { groupOf } from "@/model/group";
 import type { Piece } from "@/model/types";
 import { isGizmoObject } from "@/scene/gizmoStyle";
 import { pickEdge } from "@/scene/pickEdge";
+import { usePlaneDrag } from "@/scene/usePlaneDrag";
 import { applyCommand, useAppStore } from "@/state/store";
 import { measureClick } from "@/tools/measureSession";
 
@@ -27,13 +33,13 @@ const COLORS = {
 	framing: "#c99a63",
 } as const;
 
-/** Selected pieces keep a hint of their wood colour under a light blue tint. */
-const SELECTED_TINT = "#9ccaff";
+/** Selected pieces keep their wood colour under a light amber tint, outlined in the UI's amber accent. */
+const SELECTED_TINT = "#fcd34d";
 const SELECTED_COLORS = {
-	sheet: new Color(COLORS.sheet).lerp(new Color(SELECTED_TINT), 0.7),
-	framing: new Color(COLORS.framing).lerp(new Color(SELECTED_TINT), 0.7),
+	sheet: new Color(COLORS.sheet).lerp(new Color(SELECTED_TINT), 0.35),
+	framing: new Color(COLORS.framing).lerp(new Color(SELECTED_TINT), 0.35),
 };
-const SELECTED_EDGE = "#2563eb";
+const SELECTED_EDGE = "#f59e0b";
 
 /** Join wheel preview: the piece to be cut glows amber; the pieces cutting it (pulled clear) are faded. */
 const JOIN_TARGET_TINT = "#f5a524";
@@ -132,19 +138,29 @@ export function PieceMesh({
 			return;
 		}
 		const shift = e.nativeEvent.shiftKey;
-		const piecesSelected = useAppStore.getState().doc.selection.length > 0;
-		// Shift+click while pieces are selected adds/removes this whole piece (multi-select to move/rotate).
-		if (shift && piecesSelected) {
-			applyCommand(commands.togglePiece(piece.id));
-			return;
-		}
-		// A face that can't be extruded (sheet top, rail side), or a surface inside a cut, selects the whole piece.
-		if (!outside || !extrudableDimension(piece, face)) {
+		// Alt+click works inside a group: just this piece (or its face), not the whole group.
+		const single = e.nativeEvent.altKey;
+		const { doc } = useAppStore.getState();
+		const selectObject = () =>
 			applyCommand(
-				shift
-					? commands.togglePiece(piece.id)
-					: commands.selectPieces([piece.id]),
+				single
+					? shift
+						? commands.togglePiece(piece.id)
+						: commands.selectPieces([piece.id])
+					: shift
+						? commands.toggleObject(piece.id)
+						: commands.selectObjects([piece.id]),
 			);
+		// Shift+click while pieces are selected adds/removes this whole piece (multi-select to move/rotate).
+		// A face that can't be extruded (sheet top, rail side), a surface inside a cut, or a piece in a
+		// group selects the whole object.
+		if (
+			(shift && doc.selection.length > 0) ||
+			!outside ||
+			!extrudableDimension(piece, face) ||
+			(!single && groupOf(doc.groups, piece.id))
+		) {
+			selectObject();
 			return;
 		}
 		// Otherwise Shift+click adds/removes a face, for extruding several together.
@@ -173,14 +189,30 @@ export function PieceMesh({
 		if (measureHover?.pieceId === piece.id) setMeasureHover(null);
 	};
 
+	// Pressing on a selected piece and dragging moves it across the plane of the grabbed face.
+	const startPlaneDrag = usePlaneDrag();
+	const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
+		if (ghost || joinRole) return;
+		if (e.intersections.some((i) => isGizmoObject(i.object))) return;
+		const hit = e.intersections.find((i) => i.object === e.eventObject);
+		if (!hit?.face) return;
+		const n = hit.face.normal;
+		startPlaneDrag(e, piece.id, rotateVector({ x: n.x, y: n.y, z: n.z }, r));
+	};
+
 	const onDoubleClick = (e: ThreeEvent<MouseEvent>) => {
 		e.stopPropagation();
 		// With Shift, the two clicks before this already toggled the piece in and out; toggle it back.
 		if (ghost || useAppStore.getState().tool === "measure") return;
+		const single = e.nativeEvent.altKey;
 		applyCommand(
 			e.nativeEvent.shiftKey
-				? commands.togglePiece(piece.id)
-				: commands.selectPieces([piece.id]),
+				? single
+					? commands.togglePiece(piece.id)
+					: commands.toggleObject(piece.id)
+				: single
+					? commands.selectPieces([piece.id])
+					: commands.selectObjects([piece.id]),
 		);
 	};
 
@@ -191,6 +223,7 @@ export function PieceMesh({
 			position={[p.x + o.x, p.y + o.y, p.z + o.z]}
 			rotation={[r.x * DEG, r.y * DEG, r.z * DEG]}
 			onClick={onClick}
+			onPointerDown={onPointerDown}
 			onPointerMove={onPointerMove}
 			onPointerOut={onPointerOut}
 			onDoubleClick={onDoubleClick}

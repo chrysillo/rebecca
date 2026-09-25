@@ -9,6 +9,12 @@ import {
 	isEditableDimension,
 	pieceSize,
 } from "@/model/dimensions";
+import {
+	defaultGroupName,
+	type Group,
+	groupsWithin,
+	pruneGroups,
+} from "@/model/group";
 import { defaultName } from "@/model/naming";
 import type { Id, Piece, Pivot, Transform } from "@/model/types";
 import type { Command, DocumentState } from "@/state/document";
@@ -62,6 +68,7 @@ export const deletePieces =
 					([, m]) => pieces[m.from.pieceId] && pieces[m.to.pieceId],
 				),
 			),
+			groups: pruneGroups(doc.groups, (id) => Boolean(pieces[id])),
 			// Likewise a joint needs both its pieces.
 			joints: Object.fromEntries(
 				Object.entries(doc.joints).filter(
@@ -77,6 +84,7 @@ export const duplicatePiecesTo =
 	(doc) => {
 		const pieces = { ...doc.pieces };
 		const selection: Id[] = [];
+		const copyOf: Record<Id, Id> = {};
 		for (const [id, { position, rotation }] of Object.entries(transforms)) {
 			const original = doc.pieces[id];
 			if (!original) continue;
@@ -88,10 +96,20 @@ export const duplicatePiecesTo =
 			});
 			pieces[copy.id] = copy;
 			selection.push(copy.id);
+			copyOf[id] = copy.id;
 		}
-		return selection.length
-			? { ...doc, pieces, selection, selectedFaces: [] }
-			: doc;
+		if (!selection.length) return doc;
+		// A whole group copied makes a new group of the copies.
+		const groups = { ...doc.groups };
+		for (const g of groupsWithin(doc.groups, Object.keys(copyOf))) {
+			const group: Group = {
+				id: newId(),
+				name: defaultGroupName(groups),
+				pieceIds: g.pieceIds.map((p) => copyOf[p]),
+			};
+			groups[group.id] = group;
+		}
+		return { ...doc, pieces, groups, selection, selectedFaces: [] };
 	};
 
 /**

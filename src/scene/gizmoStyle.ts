@@ -56,3 +56,6 @@ export const PLANE_ORIENTATION: Record<Axis, Euler> = {
 function basis(x: Vector3, y: Vector3, z: Vector3): Euler {
 	return new Euler().setFromRotationMatrix(new Matrix4().makeBasis(x, y, z));
 }
+
+/** The face being snapped to (outline and tint), during a drag or extrude. */
+export const SNAP_COLOR = "#e8590c";

@@ -2,6 +2,7 @@ import { usePointerTracking } from "@/input/pointer";
 import { useKeybindings } from "@/input/useKeybindings";
 import { Viewport } from "@/scene/Viewport";
 import { CreateWheel } from "@/ui/CreateWheel";
+import { ExportBar } from "@/ui/ExportBar";
 import { JoinWheel } from "@/ui/JoinWheel";
 import { KeyHints } from "@/ui/KeyHints";
 import { Notice } from "@/ui/Notice";
@@ -30,9 +31,15 @@ export function App() {
 						<Outliner />
 					</div>
 				</div>
-				{/* Sits below the view cube, which the 3D view draws in the top-right corner. */}
-				<div className="pointer-events-auto mt-40">
-					<PropertiesPanel />
+				{/* Below the view cube, which the 3D view draws in the top-right corner. Mirrors the
+				    tool strip on the left: the panel column inward, the vertical icon strip outward. */}
+				<div className="flex items-start gap-3 mt-40">
+					<div className="pointer-events-auto">
+						<PropertiesPanel />
+					</div>
+					<div className="pointer-events-auto relative z-20">
+						<ExportBar />
+					</div>
 				</div>
 			</div>
 			<div className="pointer-events-none absolute bottom-3 left-3">

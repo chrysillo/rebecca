@@ -6,7 +6,7 @@ import { useAppStore } from "@/state/store";
 import { docWith, rail, sheet } from "@/test/fixtures";
 import { typedSize } from "@/tools/creatorSession";
 import { confirmJoin, openJoiner } from "@/tools/joinSession";
-import { computeMove } from "@/tools/moveTool";
+import { computeMove, computePlaneMove } from "@/tools/moveTool";
 import { computeRotation } from "@/tools/rotateTool";
 
 const a = rail({ id: "a" });
@@ -127,5 +127,21 @@ describe("join wheel", () => {
 		});
 		openJoiner({ x: 0, y: 0 });
 		expect(useAppStore.getState().joiner).toBeNull();
+	});
+});
+
+describe("computePlaneMove", () => {
+	it("steps each in-plane axis and snaps them independently", () => {
+		const targets = snapTargets([a, b], new Set(["b"]));
+		const moved = computePlaneMove({
+			pieces: [b],
+			targets,
+			travel: { x: 97.4, y: 43 },
+			fine: false,
+			tolerance: 10,
+		});
+		// X just steps (nothing in range); Y snaps b's side against a's far side (38 + 19).
+		expect(moved.transforms.b.position).toEqual({ x: 1700, y: 57, z: 31.5 });
+		expect(moved.snapTarget).not.toBeNull();
 	});
 });

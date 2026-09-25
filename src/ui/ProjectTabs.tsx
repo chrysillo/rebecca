@@ -71,7 +71,7 @@ function Tab({ name, active, renaming, onRename, onRenameDone }: TabProps) {
 		<div
 			className={`group flex shrink-0 items-center gap-1 rounded-[7px] py-1 pr-1.5 pl-3 ${
 				active
-					? "bg-neutral-100 font-medium text-neutral-800"
+					? "bg-amber-100 font-medium text-amber-900"
 					: "text-neutral-500 hover:bg-neutral-100"
 			}`}
 			onAuxClick={(e) => {
