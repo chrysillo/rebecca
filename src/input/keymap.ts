@@ -9,7 +9,11 @@ export type Action =
 	| "delete"
 	| "undo"
 	| "redo"
-	| "escape";
+	| "escape"
+	| "newProject"
+	| "nextProject"
+	| "prevProject"
+	| "closeProject";
 
 /**
  * A key, matched by physical position (`KeyboardEvent.code`) so Alt/Option doesn't change it.
@@ -38,6 +42,11 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 		{ code: "KeyY", mod: true },
 	],
 	escape: [{ code: "Escape" }],
+	// Alt, because browsers keep ⌘N / ⌘W / Ctrl+Tab for themselves.
+	newProject: [{ code: "KeyN", alt: true, mod: false }],
+	nextProject: [{ code: "BracketRight", alt: true, mod: false }],
+	prevProject: [{ code: "BracketLeft", alt: true, mod: false }],
+	closeProject: [{ code: "KeyW", alt: true, mod: false }],
 };
 
 const isMac =
@@ -68,6 +77,8 @@ const KEY_NAMES: Record<string, string> = {
 	Delete: "Del",
 	Backspace: "⌫",
 	Escape: "Esc",
+	BracketLeft: "[",
+	BracketRight: "]",
 };
 
 /** Human-readable shortcut for an action, e.g. "V", "⌘Z", "⇧⌘Z" (or "Ctrl+Z" off macOS). */

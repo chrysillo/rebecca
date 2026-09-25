@@ -1,6 +1,12 @@
 import { commands } from "@/commands";
 import type { Action } from "@/input/keymap";
 import { lastPointer } from "@/input/pointer";
+import {
+	closeTab,
+	cycleTab,
+	newProject,
+	useProjectsStore,
+} from "@/state/projects";
 import { useAppStore } from "@/state/store";
 import { cancelCreator, openCreator } from "@/tools/creatorSession";
 import { startExtrude } from "@/tools/extrudeSession";
@@ -32,5 +38,12 @@ export const ACTIONS: Record<Action, () => void> = {
 		else if (cancelMeasure()) return;
 		else if (store().drag) store().setDrag(null);
 		else store().apply(commands.clearSelection);
+	},
+	newProject: () => void newProject(),
+	nextProject: () => cycleTab(1),
+	prevProject: () => cycleTab(-1),
+	closeProject: () => {
+		const { active } = useProjectsStore.getState();
+		if (active) void closeTab(active);
 	},
 };

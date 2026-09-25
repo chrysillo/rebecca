@@ -32,14 +32,53 @@ function starterStock(): Record<Id, Stock> {
 	return { [sheet.id]: sheet, [framing.id]: framing };
 }
 
-export const emptyDocument: DocumentState = {
-	pieces: {},
-	stock: starterStock(),
-	measurements: {},
-	selection: [],
-	groupPivot: "centre",
-	selectedFaces: [],
+/** A fresh project: no pieces, the starter stock (with its own new ids). */
+export function newDocument(): DocumentState {
+	return {
+		pieces: {},
+		stock: starterStock(),
+		measurements: {},
+		selection: [],
+		groupPivot: "centre",
+		selectedFaces: [],
+	};
+}
+
+export const emptyDocument: DocumentState = newDocument();
+
+const FILE_VERSION = 1;
+
+/** What a project's JSON file holds: the model only. Selection is session state and isn't saved. */
+export type ProjectFile = {
+	version: number;
+	pieces: Record<Id, Piece>;
+	stock: Record<Id, Stock>;
+	measurements: Record<Id, Measurement>;
 };
+
+export const toProjectFile = (doc: DocumentState): ProjectFile => ({
+	version: FILE_VERSION,
+	pieces: doc.pieces,
+	stock: doc.stock,
+	measurements: doc.measurements,
+});
+
+/** Reads a saved project, filling in anything an older file lacks. Throws on a file it can't read. */
+export function fromProjectFile(json: unknown): DocumentState {
+	if (typeof json !== "object" || json === null)
+		throw new Error("Not a project file");
+	const file = json as Partial<ProjectFile>;
+	if (file.version !== FILE_VERSION)
+		throw new Error(`Unsupported project version: ${String(file.version)}`);
+	return {
+		pieces: file.pieces ?? {},
+		stock: file.stock ?? starterStock(),
+		measurements: file.measurements ?? {},
+		selection: [],
+		groupPivot: "centre",
+		selectedFaces: [],
+	};
+}
 
 /** A document change: a pure function returning a new document, or the same one when nothing changed. */
 export type Command = (doc: DocumentState) => DocumentState;

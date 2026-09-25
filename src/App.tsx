@@ -5,6 +5,7 @@ import { CreateWheel } from "@/ui/CreateWheel";
 import { KeyHints } from "@/ui/KeyHints";
 import { Notice } from "@/ui/Notice";
 import { Outliner } from "@/ui/Outliner";
+import { ProjectTabs } from "@/ui/ProjectTabs";
 import { PropertiesPanel } from "@/ui/PropertiesPanel";
 import { StockPanel } from "@/ui/StockPanel";
 import { ToolStrip } from "@/ui/ToolStrip";
@@ -35,6 +36,11 @@ export function App() {
 			</div>
 			<div className="pointer-events-none absolute bottom-3 left-3">
 				<KeyHints />
+			</div>
+			<div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
+				<div className="pointer-events-auto">
+					<ProjectTabs />
+				</div>
 			</div>
 			<CreateWheel />
 			<Notice />

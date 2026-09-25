@@ -1,0 +1,115 @@
+{
+	"version": 1,
+	"pieces": {
+		"cc3dbf39-a68e-4455-ba57-5495b3012d73": {
+			"id": "cc3dbf39-a68e-4455-ba57-5495b3012d73",
+			"name": "Framing 1",
+			"kind": "framing",
+			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"width": 38,
+			"depth": 63,
+			"length": 1300,
+			"position": {
+				"x": 1080,
+				"y": 19,
+				"z": 31.5
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"pivot": "centre"
+		},
+		"10f7e07f-a5a9-44b4-bd57-382b238c8125": {
+			"id": "10f7e07f-a5a9-44b4-bd57-382b238c8125",
+			"name": "Framing 1",
+			"kind": "framing",
+			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"width": 38,
+			"depth": 63,
+			"length": 1300,
+			"position": {
+				"x": 1080,
+				"y": -743,
+				"z": 31.5
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"pivot": "centre"
+		},
+		"037742bd-76cd-494b-bbf8-a4aed1a90752": {
+			"id": "037742bd-76cd-494b-bbf8-a4aed1a90752",
+			"name": "Framing 1",
+			"kind": "framing",
+			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"width": 38,
+			"depth": 63,
+			"length": 724,
+			"position": {
+				"x": 1711,
+				"y": -362,
+				"z": 31.5
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": -90
+			},
+			"pivot": "centre"
+		},
+		"e4d520e9-ba2c-40d2-b952-c9e57bea201e": {
+			"id": "e4d520e9-ba2c-40d2-b952-c9e57bea201e",
+			"name": "Framing 1",
+			"kind": "framing",
+			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"width": 38,
+			"depth": 63,
+			"length": 724,
+			"position": {
+				"x": 449,
+				"y": -362,
+				"z": 31.5
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": -90
+			},
+			"pivot": "centre"
+		}
+	},
+	"stock": {
+		"11738a7b-ea1b-4801-a486-e00d56ab051f": {
+			"id": "11738a7b-ea1b-4801-a486-e00d56ab051f",
+			"kind": "sheet",
+			"thickness": 18
+		},
+		"adf3bd30-a638-4b47-8d9d-7866b3804054": {
+			"id": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"kind": "framing",
+			"width": 38,
+			"depth": 63
+		}
+	},
+	"measurements": {
+		"d0ed3b0f-e24c-4116-9c89-bb63124c268a": {
+			"id": "d0ed3b0f-e24c-4116-9c89-bb63124c268a",
+			"from": {
+				"pieceId": "cc3dbf39-a68e-4455-ba57-5495b3012d73",
+				"axis": "z",
+				"u": 1,
+				"v": 1
+			},
+			"to": {
+				"pieceId": "10f7e07f-a5a9-44b4-bd57-382b238c8125",
+				"axis": "z",
+				"u": 1,
+				"v": -1
+			}
+		}
+	}
+}
