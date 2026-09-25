@@ -80,10 +80,14 @@ export function cutListText(rows: CutListRow[]): string {
 	return sections.join("\n\n");
 }
 
-const sectionText = (group: { kind: PieceKind; stock: string; lines: string[] }) =>
-	[SECTION_NAME[group.kind], `${group.stock}mm`, ...group.lines].join("\n");
+const sectionText = (group: {
+	kind: PieceKind;
+	stock: string;
+	lines: string[];
+}) => [SECTION_NAME[group.kind], `${group.stock}mm`, ...group.lines].join("\n");
 
 const lineFor = (row: CutListRow) => {
-	const dims = row.width === null ? `${row.length}mm` : `${row.length}x${row.width}mm`;
+	const dims =
+		row.width === null ? `${row.length}mm` : `${row.length}x${row.width}mm`;
 	return `${row.quantity}x ${dims}`;
 };

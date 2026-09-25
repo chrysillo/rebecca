@@ -3,7 +3,6 @@ import { type FaceRef, faceNormal } from "@/geometry/box";
 import { AXES } from "@/geometry/vec";
 import { dimensionEntries, pieceSize } from "@/model/dimensions";
 import { kindName } from "@/model/naming";
-import { stockLabel, stockOfKind } from "@/model/stock";
 import type { Piece } from "@/model/types";
 import { selectedPieces } from "@/state/selectors";
 import { applyCommand, useAppStore } from "@/state/store";
@@ -114,29 +113,10 @@ function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
 }
 
 function PieceProperties({ piece }: { piece: Piece }) {
-	const stock = useAppStore((s) => s.doc.stock);
 	return (
-		<Panel title={piece.name}>
-			<p className="-mt-2 text-[11px] text-neutral-400">
-				{kindName(piece.kind)}
-			</p>
-			<Group title="Stock">
-				<select
-					className="h-7 rounded-md border border-transparent bg-neutral-100 px-2 text-[13px] text-neutral-800 focus:border-amber-500 focus:bg-white focus:outline-none"
-					value={piece.stockId}
-					onChange={(e) =>
-						applyCommand(commands.setPieceStock(piece.id, e.target.value))
-					}
-				>
-					{stockOfKind(stock, piece.kind).map((s) => (
-						<option key={s.id} value={s.id}>
-							{kindName(s.kind)} {stockLabel(s)}
-						</option>
-					))}
-				</select>
-			</Group>
+		<Panel title={piece.name} width="w-44">
 			<Joints piece={piece} />
-			<Group title="Dimensions">
+			<div className="flex flex-col gap-1.5">
 				{dimensionEntries(piece).map((d) => (
 					<NumberField
 						key={d.key}
@@ -144,6 +124,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 						value={d.value}
 						greaterThan={0}
 						unit="mm"
+						smallLabel
 						onCommit={
 							d.editable
 								? (v) => applyCommand(commands.setDimension(piece.id, d.key, v))
@@ -151,7 +132,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 						}
 					/>
 				))}
-			</Group>
+			</div>
 		</Panel>
 	);
 }

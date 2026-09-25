@@ -44,7 +44,7 @@ export function StockPanel() {
 	);
 
 	return (
-		<Panel title="Stock" collapsible>
+		<Panel title="Stock" collapsible defaultOpen={false}>
 			{section("sheet")}
 			{section("framing")}
 		</Panel>

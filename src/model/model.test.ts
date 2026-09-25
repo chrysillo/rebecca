@@ -1,8 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { commands } from "@/commands";
 import { cutListKey } from "@/model/cutListKey";
 import { defaultName } from "@/model/naming";
-import { findStock, orderedStock, type Stock } from "@/model/stock";
-import { rail, sheet } from "@/test/fixtures";
+import {
+	findStock,
+	identicalRuns,
+	orderedStock,
+	type Stock,
+	stockSections,
+} from "@/model/stock";
+import { docWith, rail, sheet } from "@/test/fixtures";
 
 describe("cutListKey", () => {
 	it("treats the same cut as identical whichever way round it was drawn", () => {
@@ -36,7 +43,7 @@ describe("defaultName", () => {
 			rail({ name: "Leg" }),
 		];
 		expect(defaultName(pieces, "sheet")).toBe("Sheet 4");
-		expect(defaultName(pieces, "framing")).toBe("Framing 1");
+		expect(defaultName(pieces, "framing")).toBe("Timber 1");
 	});
 });
 
@@ -55,5 +62,36 @@ describe("stock lookups", () => {
 
 	it("lists sheets before framing", () => {
 		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "f"]);
+	});
+});
+
+describe("identicalRuns", () => {
+	it("stacks pieces of the same stock and length, whatever their names or joints", () => {
+		const a = rail({ id: "a", name: "Rail A" });
+		const b = rail({
+			id: "b",
+			name: "Rail B",
+			position: { x: 500, y: 19, z: 31.5 },
+			rotation: { x: 0, y: 0, z: 90 },
+		});
+		const c = rail({ id: "c", name: "Short", length: 600 });
+		const doc = commands.joinInto("a", ["b"])(docWith([a, b, c]));
+		expect(Object.keys(doc.joints)).toHaveLength(1);
+		const [section] = stockSections(Object.values(doc.pieces), doc.stock);
+		expect(
+			identicalRuns(section.pieces).map((run) => run.map((p) => p.id)),
+		).toEqual([["a", "b"], ["c"]]);
+	});
+
+	it("stacks a sheet drawn either way round", () => {
+		const pieces = [
+			sheet({ id: "a", length: 800, width: 400 }),
+			sheet({ id: "b", length: 600, width: 300 }),
+			sheet({ id: "c", length: 400, width: 800 }),
+		];
+		const [section] = stockSections(pieces, docWith(pieces).stock);
+		expect(
+			identicalRuns(section.pieces).map((run) => run.map((p) => p.id)),
+		).toEqual([["a", "c"], ["b"]]);
 	});
 });

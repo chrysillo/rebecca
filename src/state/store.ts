@@ -38,6 +38,15 @@ type AppState = {
 	lastCreated: Id | null;
 	/** True while views are being exported: gizmos, grid and overlays are hidden. */
 	exporting: boolean;
+	/** The right-click menu for a piece, at a screen position (px), when open. */
+	contextMenu: { pieceId: Id; x: number; y: number } | null;
+	/**
+	 * A request for the object list to open, unfold and scroll to a piece, optionally starting a
+	 * rename there; `id` makes repeats count.
+	 */
+	reveal: { pieceId: Id; rename: boolean; id: number } | null;
+	/** The piece under the pointer, in the 3D view or the object list. */
+	hovered: Id | null;
 
 	/** Runs a command and records an undo step if the document changed. */
 	apply: (command: Command) => void;
@@ -54,6 +63,9 @@ type AppState = {
 	setJoiner: (joiner: JoinerState | null) => void;
 	setLastCreated: (stockId: Id) => void;
 	setExporting: (exporting: boolean) => void;
+	setContextMenu: (menu: AppState["contextMenu"]) => void;
+	revealInList: (pieceId: Id, options?: { rename?: boolean }) => void;
+	setHovered: (hovered: Id | null) => void;
 };
 
 export const useAppStore = create<AppState>()((set, get) => ({
@@ -69,6 +81,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	joiner: null,
 	lastCreated: null,
 	exporting: false,
+	contextMenu: null,
+	reveal: null,
+	hovered: null,
 
 	apply: (command) => {
 		const { doc } = get();
@@ -96,6 +111,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	setJoiner: (joiner) => set({ joiner }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
 	setExporting: (exporting) => set({ exporting }),
+	setContextMenu: (contextMenu) => set({ contextMenu }),
+	revealInList: (pieceId, options) =>
+		set({
+			reveal: { pieceId, rename: options?.rename ?? false, id: Date.now() },
+		}),
+	setHovered: (hovered) => set({ hovered }),
 }));
 
 /** Shorthand for non-React callers (keybindings, tools). */

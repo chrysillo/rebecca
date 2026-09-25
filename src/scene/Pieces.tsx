@@ -16,6 +16,8 @@ export function Pieces() {
 	const extrude = useAppStore((s) => s.extrude);
 	const joiner = useAppStore((s) => s.joiner);
 	const exporting = useAppStore((s) => s.exporting);
+	// The piece a right-click menu is open for stays lit; otherwise the one under the pointer.
+	const highlighted = useAppStore((s) => s.contextMenu?.pieceId ?? s.hovered);
 	const items = useMemo(() => {
 		const shown = displayPieces(joinPreview(doc, joiner), drag, extrude);
 		if (!joiner) return shown;
@@ -41,6 +43,7 @@ export function Pieces() {
 			key={item.piece.id}
 			{...item}
 			selected={item.selected && !exporting}
+			hovered={item.piece.id === highlighted && !exporting && !drag}
 		/>
 	));
 }

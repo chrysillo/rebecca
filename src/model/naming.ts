@@ -7,9 +7,18 @@ const KIND_NAME: Record<PieceKind, string> = {
 
 export const kindName = (kind: PieceKind) => KIND_NAME[kind];
 
-/** Next unused default name for a kind, e.g. "Framing 4". Numbers are never reused after a delete. */
+/** What new pieces are called in the object list: short, so "Timber 4" rather than "Framing 4". */
+const PIECE_NAME: Record<PieceKind, string> = {
+	sheet: "Sheet",
+	framing: "Timber",
+};
+
+/** The name new pieces of a kind get (before their number), also shown on the create wheel. */
+export const pieceName = (kind: PieceKind) => PIECE_NAME[kind];
+
+/** Next unused default name for a kind, e.g. "Timber 4". Numbers are never reused after a delete. */
 export function defaultName(existing: Piece[], kind: PieceKind): string {
-	const prefix = `${KIND_NAME[kind]} `;
+	const prefix = `${PIECE_NAME[kind]} `;
 	let highest = 0;
 	for (const piece of existing) {
 		if (!piece.name.startsWith(prefix)) continue;

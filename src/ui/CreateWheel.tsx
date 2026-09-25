@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { kindName } from "@/model/naming";
+import { pieceName } from "@/model/naming";
 import { orderedStock, type Stock, stockLabel } from "@/model/stock";
 import { useAppStore } from "@/state/store";
 import {
@@ -14,7 +14,7 @@ import { RadialMenu } from "@/ui/components/RadialMenu";
 const WHEEL_HINTS = [
 	["R", "switch"],
 	["Release R / click", "create"],
-	["S / F", "sheet / framing"],
+	["S / F", "sheet / timber"],
 	["0–9", "type a size"],
 	["Esc", "cancel"],
 ] as const;
@@ -46,7 +46,7 @@ export function CreateWheel() {
 					<>
 						<StockSilhouette stock={s} />
 						<span className="font-condensed text-sm font-semibold uppercase leading-none tracking-[0.12em] group-data-active:font-bold">
-							{kindName(s.kind)}
+							{pieceName(s.kind)}
 						</span>
 						<span className="font-mono text-[11px] leading-none tabular-nums text-neutral-500 group-data-active:font-medium group-data-active:text-amber-300">
 							{stockLabel(s)}
@@ -57,7 +57,7 @@ export function CreateWheel() {
 			centre={
 				<>
 					<span className="font-condensed text-xs font-semibold uppercase leading-none tracking-[0.16em] text-neutral-500">
-						{target ? kindName(target.kind) : ""}
+						{target ? pieceName(target.kind) : ""}
 					</span>
 					<span className="font-mono text-base font-semibold leading-none tabular-nums text-neutral-800">
 						{creator.typed ? (

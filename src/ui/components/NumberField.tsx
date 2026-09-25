@@ -8,6 +8,8 @@ type Props = {
 	/** Values must be strictly greater than this (e.g. 0 for dimensions). */
 	greaterThan?: number;
 	unit?: string;
+	/** Shrinks the label to match a Group title (11px) instead of the normal 13px. */
+	smallLabel?: boolean;
 };
 
 /** A numeric input that edits a draft and commits on Enter/blur. Escape reverts. Read-only without onCommit. */
@@ -17,6 +19,7 @@ export function NumberField({
 	onCommit,
 	greaterThan,
 	unit,
+	smallLabel = false,
 }: Props) {
 	const display = formatNumber(value);
 	const [draft, setDraft] = useState(display);
@@ -35,7 +38,9 @@ export function NumberField({
 	const readOnly = !onCommit;
 
 	return (
-		<label className="grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 text-[13px]">
+		<label
+			className={`grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 ${smallLabel ? "text-[11px]" : "text-[13px]"}`}
+		>
 			<span className={readOnly ? "text-neutral-400" : "text-neutral-600"}>
 				{label}
 			</span>

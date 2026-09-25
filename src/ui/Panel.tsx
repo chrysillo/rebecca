@@ -6,6 +6,11 @@ type PanelProps = {
 	/** Adds an arrow in the header that shows/hides the panel body. */
 	collapsible?: boolean;
 	defaultOpen?: boolean;
+	/** Tailwind width class. Defaults to the standard panel width. */
+	width?: string;
+	/** Controls the open state from outside (with `onOpenChange`), e.g. to open it on demand. */
+	open?: boolean;
+	onOpenChange?: (open: boolean) => void;
 };
 
 /** A floating card. Used for every overlay panel; optionally collapsible. */
@@ -14,17 +19,27 @@ export function Panel({
 	children,
 	collapsible = false,
 	defaultOpen = true,
+	width = "w-62",
+	open: openProp,
+	onOpenChange,
 }: PanelProps) {
-	const [open, setOpen] = useState(defaultOpen);
+	const [openState, setOpenState] = useState(defaultOpen);
+	const open = openProp ?? openState;
+	const setOpen = (next: boolean) => {
+		setOpenState(next);
+		onOpenChange?.(next);
+	};
 	const showBody = !collapsible || open;
 
 	return (
-		<section className="w-62 rounded-xl border border-black/6 bg-white/92 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_6px_16px_rgba(0,0,0,0.05)] backdrop-blur-md p-3.5">
+		<section
+			className={`${width} rounded-xl border border-black/6 bg-white/92 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_6px_16px_rgba(0,0,0,0.05)] backdrop-blur-md p-3.5`}
+		>
 			{collapsible ? (
 				<button
 					type="button"
 					className="flex w-full items-center gap-1.5 text-left"
-					onClick={() => setOpen((o) => !o)}
+					onClick={() => setOpen(!open)}
 					aria-expanded={open}
 				>
 					<span

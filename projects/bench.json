@@ -341,26 +341,6 @@
 			},
 			"pivot": "centre"
 		},
-		"a1732df3-b7d5-455b-9c5b-be031fbd00c4": {
-			"id": "a1732df3-b7d5-455b-9c5b-be031fbd00c4",
-			"name": "Framing 1",
-			"kind": "framing",
-			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
-			"width": 38,
-			"depth": 63,
-			"length": 199,
-			"position": {
-				"x": 1011,
-				"y": -730.5,
-				"z": 162.5
-			},
-			"rotation": {
-				"x": 90,
-				"y": 0,
-				"z": -90
-			},
-			"pivot": "centre"
-		},
 		"5631e347-fce8-42e3-9527-00952c240da2": {
 			"id": "5631e347-fce8-42e3-9527-00952c240da2",
 			"name": "vertical test 2",
@@ -540,6 +520,26 @@
 				"z": -90
 			},
 			"pivot": "centre"
+		},
+		"c2ddd57a-e37d-4a00-a6fb-43bb52c6ce19": {
+			"id": "c2ddd57a-e37d-4a00-a6fb-43bb52c6ce19",
+			"name": "vertical test 2",
+			"kind": "framing",
+			"stockId": "adf3bd30-a638-4b47-8d9d-7866b3804054",
+			"width": 38,
+			"depth": 63,
+			"length": 262,
+			"position": {
+				"x": 1011,
+				"y": -730.5,
+				"z": 131
+			},
+			"rotation": {
+				"x": 90,
+				"y": 0,
+				"z": -90
+			},
+			"pivot": "centre"
 		}
 	},
 	"stock": {
@@ -617,12 +617,6 @@
 			}
 		}
 	},
-	"joints": {
-		"180ead04-a9bf-4c2a-9b1e-cfd6f13a7a1b": {
-			"id": "180ead04-a9bf-4c2a-9b1e-cfd6f13a7a1b",
-			"target": "7606d342-3f9e-4770-8ba9-821269f71530",
-			"tool": "eb5396e1-5a6a-4f8b-9336-5db082a121de"
-		}
-	},
+	"joints": {},
 	"groups": {}
 }

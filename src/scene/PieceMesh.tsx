@@ -24,6 +24,7 @@ import { isGizmoObject } from "@/scene/gizmoStyle";
 import { pickEdge } from "@/scene/pickEdge";
 import { usePlaneDrag } from "@/scene/usePlaneDrag";
 import { applyCommand, useAppStore } from "@/state/store";
+import { armContextMenu } from "@/tools/contextMenuSession";
 import { measureClick } from "@/tools/measureSession";
 
 const DEG = Math.PI / 180;
@@ -40,6 +41,18 @@ const SELECTED_COLORS = {
 	framing: new Color(COLORS.framing).lerp(new Color(SELECTED_TINT), 0.35),
 };
 const SELECTED_EDGE = "#f59e0b";
+
+/** Under the pointer (or its right-click menu open): lifted towards white, with a darker amber edge. */
+const HOVER_TINT = "#fff7e6";
+const HOVER_COLORS = {
+	sheet: new Color(COLORS.sheet).lerp(new Color(HOVER_TINT), 0.35),
+	framing: new Color(COLORS.framing).lerp(new Color(HOVER_TINT), 0.35),
+};
+const HOVER_SELECTED_COLORS = {
+	sheet: SELECTED_COLORS.sheet.clone().lerp(new Color(HOVER_TINT), 0.3),
+	framing: SELECTED_COLORS.framing.clone().lerp(new Color(HOVER_TINT), 0.3),
+};
+const HOVER_EDGE = "#d97706";
 
 /** Join wheel preview: the piece to be cut glows amber; the pieces cutting it (pulled clear) are faded. */
 const JOIN_TARGET_TINT = "#f5a524";
@@ -59,6 +72,8 @@ const SURFACE_TOLERANCE = 0.05;
 type Props = {
 	piece: Piece;
 	selected: boolean;
+	/** Under the pointer, or the piece a right-click menu is open for. */
+	hovered?: boolean;
 	ghost: boolean;
 	cutters: Piece[];
 	joinRole?: "target" | "tool";
@@ -109,6 +124,7 @@ function onOuterFace(hit: Intersection, face: FaceRef, size: Vec3): boolean {
 export function PieceMesh({
 	piece,
 	selected,
+	hovered = false,
 	ghost,
 	cutters,
 	joinRole,
@@ -184,9 +200,18 @@ export function PieceMesh({
 		);
 	};
 
+	// Only the nearest piece lights up: stopping here keeps the event from pieces behind it.
+	const onPointerOver = (e: ThreeEvent<PointerEvent>) => {
+		if (ghost || joinRole) return;
+		e.stopPropagation();
+		useAppStore.getState().setHovered(piece.id);
+	};
+
 	const onPointerOut = () => {
-		const { measureHover, setMeasureHover } = useAppStore.getState();
+		const { measureHover, setMeasureHover, hovered, setHovered } =
+			useAppStore.getState();
 		if (measureHover?.pieceId === piece.id) setMeasureHover(null);
+		if (hovered === piece.id) setHovered(null);
 	};
 
 	// Pressing on a selected piece and dragging moves it across the plane of the grabbed face.
@@ -194,6 +219,12 @@ export function PieceMesh({
 	const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
 		if (ghost || joinRole) return;
 		if (e.intersections.some((i) => isGizmoObject(i.object))) return;
+		// Right button: a menu if it's released without dragging (a drag orbits the camera).
+		if (e.button === 2) {
+			e.stopPropagation();
+			armContextMenu(piece.id, e.nativeEvent);
+			return;
+		}
 		const hit = e.intersections.find((i) => i.object === e.eventObject);
 		if (!hit?.face) return;
 		const n = hit.face.normal;
@@ -225,6 +256,7 @@ export function PieceMesh({
 			onClick={onClick}
 			onPointerDown={onPointerDown}
 			onPointerMove={onPointerMove}
+			onPointerOver={onPointerOver}
 			onPointerOut={onPointerOut}
 			onDoubleClick={onDoubleClick}
 		>
@@ -232,9 +264,15 @@ export function PieceMesh({
 				color={
 					joinRole === "target"
 						? JOIN_TARGET_COLORS[piece.kind]
-						: selected && !joinRole
-							? SELECTED_COLORS[piece.kind]
-							: COLORS[piece.kind]
+						: joinRole
+							? COLORS[piece.kind]
+							: hovered
+								? selected
+									? HOVER_SELECTED_COLORS[piece.kind]
+									: HOVER_COLORS[piece.kind]
+								: selected
+									? SELECTED_COLORS[piece.kind]
+									: COLORS[piece.kind]
 				}
 				transparent={see}
 				opacity={joinRole === "tool" ? JOIN_TOOL_OPACITY : ghost ? 0.6 : 1}
@@ -256,10 +294,18 @@ export function PieceMesh({
 							? "#8a7a64"
 							: selected
 								? SELECTED_EDGE
-								: "#5c4a32"
+								: hovered
+									? HOVER_EDGE
+									: "#5c4a32"
 				}
 				lineWidth={
-					joinRole === "target" ? 2.5 : selected && !joinRole ? 2.5 : 1
+					joinRole === "target"
+						? 2.5
+						: selected && !joinRole
+							? 2.5
+							: hovered && !joinRole
+								? 2
+								: 1
 				}
 			/>
 		</mesh>

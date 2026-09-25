@@ -90,7 +90,7 @@ export function typedSize(kind: PieceKind, typed: string): StockSize | null {
 	return { width, depth };
 }
 
-/** Letter shortcuts that pick and create in one go (R then S = new sheet). */
+/** Letter shortcuts that pick and create in one go (R then S = new sheet, R then F = new timber). */
 const QUICK_PICK: Record<string, PieceKind> = {
 	KeyS: "sheet",
 	KeyF: "framing",
