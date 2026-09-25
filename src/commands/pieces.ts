@@ -1,4 +1,5 @@
-import { piecesAabb, rotateVector } from "../geometry/box";
+import { type FaceRef, piecesAabb, rotateVector } from "../geometry/box";
+import { extrudePiece } from "../geometry/extrude";
 import { clampToFloor } from "../geometry/floor";
 import { add, roundVec, scale, sub, type Vec3 } from "../geometry/vec";
 import { newId } from "../model/createPiece";
@@ -25,6 +26,7 @@ export const addPiece =
 		return {
 			pieces: { ...doc.pieces, [placed.id]: clampToFloor(placed) },
 			selection: [placed.id],
+			selectedFace: null,
 		};
 	};
 
@@ -50,6 +52,10 @@ export const deletePieces =
 		return {
 			pieces,
 			selection: doc.selection.filter((id) => pieces[id]),
+			selectedFace:
+				doc.selectedFace && pieces[doc.selectedFace.pieceId]
+					? doc.selectedFace
+					: null,
 		};
 	};
 
@@ -71,7 +77,7 @@ export const duplicatePiecesTo =
 			pieces[copy.id] = copy;
 			selection.push(copy.id);
 		}
-		return selection.length ? { pieces, selection } : doc;
+		return selection.length ? { pieces, selection, selectedFace: null } : doc;
 	};
 
 /**
@@ -103,4 +109,14 @@ export const renamePiece =
 		const trimmed = name.trim();
 		if (!piece || !trimmed || trimmed === piece.name) return doc;
 		return replacePiece(doc, { ...piece, name: trimmed });
+	};
+
+/** Pushes/pulls one face by `distance` mm, changing that dimension. Fixed dimensions are refused. */
+export const extrudeFace =
+	(face: FaceRef, distance: number): Command =>
+	(doc) => {
+		const piece = doc.pieces[face.pieceId];
+		if (!piece || distance === 0) return doc;
+		const next = extrudePiece(piece, face, distance);
+		return next ? replacePiece(doc, next) : doc;
 	};

@@ -6,3 +6,14 @@ body,
 	height: 100%;
 	margin: 0;
 }
+
+/* Create wheel: quick pop-in, like a game's weapon wheel. */
+@keyframes wheel-pop {
+	from {
+		opacity: 0;
+		transform: scale(0.85);
+	}
+}
+.wheel-pop {
+	animation: wheel-pop 120ms ease-out;
+}

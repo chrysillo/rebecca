@@ -14,6 +14,7 @@ type Session = {
 	axis: Axis;
 	pivot: Vec3;
 	pieces: Piece[];
+	startAngle: number;
 	lastAngle: number;
 	/** Total angle dragged so far, unwrapped so it can pass ±180°. */
 	total: number;
@@ -42,7 +43,14 @@ export function useRotateDrag() {
 		if (angle === null) return;
 		pointer.capture(e);
 
-		session.current = { axis, pivot, pieces, lastAngle: angle, total: 0 };
+		session.current = {
+			axis,
+			pivot,
+			pieces,
+			startAngle: angle,
+			lastAngle: angle,
+			total: 0,
+		};
 		setDrag({
 			preview: Object.fromEntries(
 				pieces.map((p) => [
@@ -52,6 +60,7 @@ export function useRotateDrag() {
 			),
 			duplicate: false,
 			snapTarget: null,
+			rotation: { axis, startAngle: angle, degrees: 0 },
 		});
 	};
 
@@ -71,7 +80,15 @@ export function useRotateDrag() {
 			degrees: s.total,
 			fine: isHeld("fine", e),
 		});
-		setDrag({ ...drag, preview: result.transforms });
+		setDrag({
+			...drag,
+			preview: result.transforms,
+			rotation: {
+				axis: s.axis,
+				startAngle: s.startAngle,
+				degrees: result.degrees,
+			},
+		});
 	};
 
 	const onPointerUp = (e: ThreeEvent<PointerEvent>) => {

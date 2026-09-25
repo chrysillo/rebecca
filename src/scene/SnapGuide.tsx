@@ -2,9 +2,11 @@ import { Line } from "@react-three/drei";
 import { faceCorners } from "../geometry/box";
 import { useAppStore } from "../state/store";
 
-/** Outlines the face being snapped to during a drag. */
+/** Outlines the face being snapped to during a drag or extrude. */
 export function SnapGuide() {
-	const target = useAppStore((s) => s.drag?.snapTarget?.face);
+	const target = useAppStore(
+		(s) => s.drag?.snapTarget?.face ?? s.extrude?.snapTarget?.face,
+	);
 	const piece = useAppStore((s) =>
 		target ? s.doc.pieces[target.pieceId] : undefined,
 	);

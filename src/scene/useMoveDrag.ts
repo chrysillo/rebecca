@@ -62,6 +62,7 @@ export function useMoveDrag(origin: Vec3) {
 			),
 			duplicate,
 			snapTarget: null,
+			rotation: null,
 		});
 	};
 

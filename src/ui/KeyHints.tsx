@@ -1,11 +1,13 @@
 const HINTS = [
-	["Double-click", "select"],
+	["Click", "select face"],
+	["Double-click", "select object"],
 	["Right-drag", "orbit"],
-	["Left/middle-drag", "pan"],
+	["Middle-drag / ⇧ right-drag", "pan"],
 	["Wheel", "zoom"],
 	["Shift + drag", "1 mm / 15° steps"],
 	["Alt + move", "duplicate"],
-	["Esc", "deselect"],
+	["E", "extrude face (type mm, Enter)"],
+	["Esc", "deselect / cancel"],
 ] as const;
 
 /** Bottom-left reminder of mouse and modifier controls (key shortcuts are on the tool strip). */

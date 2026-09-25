@@ -3,19 +3,22 @@ import {
 	addPiece,
 	deletePieces,
 	duplicatePiecesTo,
+	extrudeFace,
 	renamePiece,
 	setDimension,
 } from "./pieces";
-import { clearSelection, selectPieces } from "./selection";
+import { clearSelection, selectFace, selectPieces } from "./selection";
 import { setCornerCoordinate, setRotation, setTransforms } from "./transform";
 
 export const commands = {
 	addPiece,
 	deletePieces,
 	duplicatePiecesTo,
+	extrudeFace,
 	renamePiece,
 	setDimension,
 	selectPieces,
+	selectFace,
 	clearSelection,
 	setTransforms,
 	setRotation,

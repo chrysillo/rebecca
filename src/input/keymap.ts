@@ -3,6 +3,7 @@ export type Action =
 	| "newObject"
 	| "selectTool"
 	| "moveTool"
+	| "extrude"
 	| "delete"
 	| "undo"
 	| "redo"
@@ -24,6 +25,7 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 	newObject: [{ code: "KeyR", mod: false }],
 	selectTool: [{ code: "KeyV", mod: false }],
 	moveTool: [{ code: "KeyM", mod: false }],
+	extrude: [{ code: "KeyE", mod: false }],
 	delete: [{ code: "Delete" }, { code: "Backspace" }],
 	undo: [{ code: "KeyZ", mod: true, shift: false }],
 	redo: [

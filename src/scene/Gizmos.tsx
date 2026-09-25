@@ -1,12 +1,14 @@
 import { centreOf, selectedPiecesPreviewed } from "../state/selectors";
 import { useAppStore } from "../state/store";
+import { GIZMO_RENDER_ORDER, gizmoMaterialProps } from "./gizmoStyle";
 import { MoveArrows } from "./MoveArrows";
-import { RotateRings } from "./RotateRings";
+import { RotateArcs } from "./RotateArcs";
+import { RotationReadout } from "./RotationReadout";
 import { ScreenSizeGroup } from "./ScreenSizeGroup";
 
 /**
  * With the Move tool, the selection gets one gizmo: arrows to move along an axis
- * and rings to rotate about it. It sits at the selection centre and follows any drag preview.
+ * and curved arcs to rotate about it. It sits at the selection centre and follows any drag preview.
  */
 export function Gizmos() {
 	const tool = useAppStore((s) => s.tool);
@@ -20,7 +22,19 @@ export function Gizmos() {
 	return (
 		<ScreenSizeGroup position={origin}>
 			<MoveArrows origin={origin} />
-			<RotateRings origin={origin} />
+			<RotateArcs origin={origin} />
+			<RotationReadout />
+			<CentreDot />
 		</ScreenSizeGroup>
+	);
+}
+
+/** Small neutral dot marking the pivot. */
+function CentreDot() {
+	return (
+		<mesh renderOrder={GIZMO_RENDER_ORDER}>
+			<sphereGeometry args={[0.03, 16, 12]} />
+			<meshBasicMaterial {...gizmoMaterialProps("#ffffff")} />
+		</mesh>
 	);
 }

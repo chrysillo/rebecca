@@ -1,4 +1,4 @@
-import type { Vec3 } from "../geometry/vec";
+import type { Axis, Vec3 } from "../geometry/vec";
 import type { Framing, Piece, PieceKind, Sheet } from "./types";
 
 type SheetDimension = "length" | "width" | "thickness";
@@ -20,6 +20,19 @@ export const isEditableDimension = (
 	key: string,
 ): key is EditableDimension =>
 	(EDITABLE_DIMENSIONS[kind] as readonly string[]).includes(key);
+
+/** Which dimension each local box axis measures (the same mapping `pieceSize` uses). */
+const AXIS_DIMENSION = {
+	sheet: { x: "length", y: "width", z: "thickness" },
+	framing: { x: "length", y: "width", z: "depth" },
+} as const satisfies {
+	sheet: Record<Axis, SheetDimension>;
+	framing: Record<Axis, FramingDimension>;
+};
+
+/** The dimension a local axis measures, e.g. a sheet's local Z is its thickness. */
+export const dimensionAlong = (kind: PieceKind, axis: Axis): string =>
+	AXIS_DIMENSION[kind][axis];
 
 /**
  * Size of the piece's box along its local X, Y, Z axes.

@@ -54,7 +54,7 @@ function Row({ piece, selected, renaming, onRename, onRenameDone }: RowProps) {
 	return (
 		<li
 			className={`flex items-center gap-2 rounded px-1 py-1 text-xs ${
-				selected ? "bg-amber-100 text-amber-900" : "hover:bg-neutral-100"
+				selected ? "bg-blue-100 text-blue-900" : "hover:bg-neutral-100"
 			}`}
 		>
 			<span

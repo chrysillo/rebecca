@@ -70,7 +70,8 @@ export function pieceFacePlanes(piece: Piece): FacePlane[] {
 	);
 }
 
-function faceNormal(piece: Piece, axis: Axis, sign: 1 | -1): Vec3 {
+/** World-space outward normal of one face. */
+export function faceNormal(piece: Piece, axis: Axis, sign: 1 | -1): Vec3 {
 	const local = { x: 0, y: 0, z: 0, [axis]: sign };
 	return rotateVector(local, piece.rotation);
 }
@@ -111,3 +112,28 @@ export const pieceAabb = (piece: Piece): Aabb =>
 
 export const piecesAabb = (pieces: Piece[]): Aabb =>
 	pointsAabb(pieces.flatMap(pieceCorners));
+
+/** The box face whose outward normal (in the piece's own frame) is `localNormal`. */
+export function faceFromLocalNormal(pieceId: Id, localNormal: Vec3): FaceRef {
+	const axis = AXES.reduce((best, a) =>
+		Math.abs(localNormal[a]) > Math.abs(localNormal[best]) ? a : best,
+	);
+	return { pieceId, axis, sign: localNormal[axis] < 0 ? -1 : 1 };
+}
+
+/** World-space centre of one face. */
+export function faceCentre(piece: Piece, face: FaceRef): Vec3 {
+	const size = pieceSize(piece);
+	return add(
+		piece.position,
+		scale(faceNormal(piece, face.axis, face.sign), size[face.axis] / 2),
+	);
+}
+
+export const sameFace = (a: FaceRef | null, b: FaceRef | null): boolean =>
+	a === b ||
+	(!!a &&
+		!!b &&
+		a.pieceId === b.pieceId &&
+		a.axis === b.axis &&
+		a.sign === b.sign);
