@@ -1,9 +1,12 @@
-import { Grid } from "@react-three/drei";
+import { Grid, Line } from "@react-three/drei";
 import { useMemo } from "react";
 import { piecesAabb } from "@/geometry/box";
 import { useAppStore } from "@/state/store";
 
 const SECTION = 1000;
+export const AXIS_X = "#df7468";
+export const AXIS_Y = "#5fae74";
+export const AXIS_Z = "#5b8fd6";
 /** Grid shown around the pieces, beyond their extent, in mm. */
 const MARGIN = 1000;
 /** Half-size of the grid when the scene is empty. */
@@ -19,19 +22,51 @@ export function Floor() {
 	const pieces = useAppStore((s) => s.doc.pieces);
 	const extent = useMemo(() => floorExtent(Object.values(pieces)), [pieces]);
 
+	const x0 = extent.cx - extent.width / 2;
+	const x1 = extent.cx + extent.width / 2;
+	const y0 = extent.cy - extent.depth / 2;
+	const y1 = extent.cy + extent.depth / 2;
+
 	return (
-		<Grid
-			args={[extent.width, extent.depth]}
-			position={[extent.cx, extent.cy, 0]}
-			rotation={[Math.PI / 2, 0, 0]}
-			cellSize={100}
-			cellThickness={0.6}
-			cellColor="#b8b3a8"
-			sectionSize={SECTION}
-			sectionThickness={1.2}
-			sectionColor="#8a8478"
-			fadeDistance={1e6}
-		/>
+		<>
+			<Grid
+				args={[extent.width, extent.depth]}
+				position={[extent.cx, extent.cy, 0]}
+				rotation={[Math.PI / 2, 0, 0]}
+				cellSize={100}
+				cellThickness={0.6}
+				cellColor="#dedede"
+				sectionSize={SECTION}
+				sectionThickness={1}
+				sectionColor="#c6c6c6"
+				fadeDistance={1e6}
+			/>
+			{/* World axes on the floor, where the grid covers them: X red, Y green. */}
+			{y0 <= 0 && y1 >= 0 && (
+				<Line
+					points={[
+						[x0, 0, 0.5],
+						[x1, 0, 0.5],
+					]}
+					color={AXIS_X}
+					transparent
+					opacity={0.7}
+					lineWidth={1.5}
+				/>
+			)}
+			{x0 <= 0 && x1 >= 0 && (
+				<Line
+					points={[
+						[0, y0, 0.5],
+						[0, y1, 0.5],
+					]}
+					color={AXIS_Y}
+					transparent
+					opacity={0.7}
+					lineWidth={1.5}
+				/>
+			)}
+		</>
 	);
 }
 

@@ -10,6 +10,7 @@ import {
 import type { DragState } from "@/state/drag";
 import type { ExtrudeState } from "@/state/extrude";
 import * as history from "@/state/history";
+import type { JoinerState } from "@/state/joiner";
 
 /**
  * The active tool: "move" shows the move/rotate gizmo on the selection, "select" hides it,
@@ -31,6 +32,8 @@ type AppState = {
 	measureHover: EdgeRef | null;
 	/** The create wheel, when open. */
 	creator: CreatorState | null;
+	/** The join wheel, when open. */
+	joiner: JoinerState | null;
 	/** The stock entry used for the last new piece (preselected in the wheel next time). */
 	lastCreated: Id | null;
 
@@ -46,6 +49,7 @@ type AppState = {
 	setMeasureStart: (edge: EdgeRef | null) => void;
 	setMeasureHover: (edge: EdgeRef | null) => void;
 	setCreator: (creator: CreatorState | null) => void;
+	setJoiner: (joiner: JoinerState | null) => void;
 	setLastCreated: (stockId: Id) => void;
 };
 
@@ -59,6 +63,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	measureStart: null,
 	measureHover: null,
 	creator: null,
+	joiner: null,
 	lastCreated: null,
 
 	apply: (command) => {
@@ -84,6 +89,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	setMeasureStart: (measureStart) => set({ measureStart }),
 	setMeasureHover: (measureHover) => set({ measureHover }),
 	setCreator: (creator) => set({ creator }),
+	setJoiner: (joiner) => set({ joiner }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
 }));
 

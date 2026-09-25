@@ -2,6 +2,7 @@ import { usePointerTracking } from "@/input/pointer";
 import { useKeybindings } from "@/input/useKeybindings";
 import { Viewport } from "@/scene/Viewport";
 import { CreateWheel } from "@/ui/CreateWheel";
+import { JoinWheel } from "@/ui/JoinWheel";
 import { KeyHints } from "@/ui/KeyHints";
 import { Notice } from "@/ui/Notice";
 import { Outliner } from "@/ui/Outliner";
@@ -15,7 +16,7 @@ export function App() {
 	usePointerTracking();
 
 	return (
-		<div className="relative h-full select-none font-sans text-neutral-800">
+		<div className="relative h-full select-none bg-[linear-gradient(#f6f6f6_0%,#ededed_45%,#e6e6e6_100%)] font-sans text-neutral-800">
 			<Viewport />
 			<div className="pointer-events-none absolute inset-0 flex items-start justify-between p-3">
 				<div className="flex items-start gap-3">
@@ -43,6 +44,7 @@ export function App() {
 				</div>
 			</div>
 			<CreateWheel />
+			<JoinWheel />
 			<Notice />
 		</div>
 	);

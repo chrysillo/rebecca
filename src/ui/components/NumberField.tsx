@@ -35,29 +35,43 @@ export function NumberField({
 	const readOnly = !onCommit;
 
 	return (
-		<label className="flex items-center gap-2 text-xs">
-			<span className="w-14 shrink-0 text-neutral-500">{label}</span>
-			<input
-				className={`w-full rounded border px-2 py-1 text-right tabular-nums ${
-					readOnly
-						? "border-transparent bg-neutral-100 text-neutral-500"
-						: "border-neutral-300 bg-white focus:border-amber-500 focus:outline-none"
-				}`}
-				value={draft}
-				readOnly={readOnly}
-				inputMode="decimal"
-				onChange={(e) => setDraft(e.target.value)}
-				onBlur={commit}
-				onKeyDown={(e) => {
-					if (e.key === "Enter") e.currentTarget.blur();
-					if (e.key === "Escape") {
-						setDraft(display);
-						// Blur after the revert has rendered, so blur commits the original value (a no-op).
-						requestAnimationFrame(() => e.currentTarget?.blur());
-					}
-				}}
-			/>
-			{unit && <span className="w-6 text-neutral-400">{unit}</span>}
+		<label className="grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 text-[13px]">
+			<span className={readOnly ? "text-neutral-400" : "text-neutral-600"}>
+				{label}
+			</span>
+			<span className="relative block">
+				<input
+					className={`h-7 w-full rounded-md border px-2 text-right font-mono text-xs font-medium tabular-nums ${
+						unit ? "pr-7" : ""
+					} ${
+						readOnly
+							? "border-[#ececec] bg-transparent text-neutral-400"
+							: "border-transparent bg-neutral-100 text-neutral-800 focus:border-amber-500 focus:bg-white focus:outline-none"
+					}`}
+					value={draft}
+					readOnly={readOnly}
+					inputMode="decimal"
+					onChange={(e) => setDraft(e.target.value)}
+					onBlur={commit}
+					onKeyDown={(e) => {
+						if (e.key === "Enter") e.currentTarget.blur();
+						if (e.key === "Escape") {
+							setDraft(display);
+							// Blur after the revert has rendered, so blur commits the original value (a no-op).
+							requestAnimationFrame(() => e.currentTarget?.blur());
+						}
+					}}
+				/>
+				{unit && (
+					<span
+						className={`pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[11px] ${
+							readOnly ? "text-neutral-300" : "text-neutral-400"
+						}`}
+					>
+						{unit}
+					</span>
+				)}
+			</span>
 		</label>
 	);
 }

@@ -8,10 +8,12 @@ import { FaceHighlight } from "@/scene/FaceHighlight";
 import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/Gizmos";
 import { gizmoFirstEvents } from "@/scene/gizmoEvents";
+import { JoinOverlap } from "@/scene/JoinOverlap";
 import { LiveGaps } from "@/scene/LiveGaps";
 import { Measurements } from "@/scene/Measurements";
 import { Pieces } from "@/scene/Pieces";
 import { SnapGuide } from "@/scene/SnapGuide";
+import { ScreenProjection } from "@/scene/screenProjection";
 import { ViewCube } from "@/scene/ViewCube";
 import { applyCommand } from "@/state/store";
 import { cancelMeasure } from "@/tools/measureSession";
@@ -49,12 +51,14 @@ export function Viewport() {
 					applyCommand(commands.clearSelection);
 			}}
 		>
-			<color attach="background" args={["#ecebe7"]} />
+			{/* No background colour: the canvas is transparent over the page gradient (see App). */}
 			<ambientLight intensity={1.2} />
 			<directionalLight position={[3000, -2000, 5000]} intensity={1.6} />
 			<directionalLight position={[-3000, 2500, 2000]} intensity={0.5} />
 			<Floor />
 			<Pieces />
+			<JoinOverlap />
+			<ScreenProjection />
 			<FaceHighlight />
 			<Measurements />
 			<LiveGaps />

@@ -71,6 +71,7 @@ function show(name: string, session: Session) {
 		drag: null,
 		extrude: null,
 		creator: null,
+		joiner: null,
 		measureStart: null,
 		measureHover: null,
 	});

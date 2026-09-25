@@ -246,3 +246,36 @@ describe("measure tool (chaining)", () => {
 		expect(useAppStore.getState().measureStart).toBeNull();
 	});
 });
+
+describe("joints", () => {
+	// A rail pressed 9 mm into the board's top, and one well clear of it.
+	const board = sheet({ id: "board" });
+	const housed = rail({ id: "housed", position: { x: 600, y: 300, z: 40.5 } });
+	const clear = rail({ id: "clear", position: { x: 600, y: 300, z: 500 } });
+	const doc = docWith([board, housed, clear]);
+
+	it("cuts only the tools that overlap the target", () => {
+		const joined = commands.joinInto("board", ["housed", "clear"])(doc);
+		expect(Object.values(joined.joints)).toMatchObject([
+			{ target: "board", tool: "housed" },
+		]);
+	});
+
+	it("choosing the other piece flips the joint; choosing the same one changes nothing", () => {
+		const joined = commands.joinInto("board", ["housed"])(doc);
+		expect(commands.joinInto("board", ["housed"])(joined)).toBe(joined);
+		const flipped = commands.joinInto("housed", ["board"])(joined);
+		expect(Object.values(flipped.joints)).toMatchObject([
+			{ target: "housed", tool: "board" },
+		]);
+		const [j] = Object.values(joined.joints);
+		expect(commands.flipJoint(j.id)(joined).joints).toEqual(flipped.joints);
+	});
+
+	it("drops joints when a piece they use is deleted, and removes on request", () => {
+		const joined = commands.joinInto("board", ["housed"])(doc);
+		expect(commands.deletePieces(["housed"])(joined).joints).toEqual({});
+		const [j] = Object.values(joined.joints);
+		expect(commands.removeJoint(j.id)(joined).joints).toEqual({});
+	});
+});

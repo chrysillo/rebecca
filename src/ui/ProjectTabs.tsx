@@ -27,7 +27,7 @@ export function ProjectTabs() {
 	if (!available) return null;
 
 	return (
-		<div className="relative flex max-w-[50vw] items-center rounded-lg border border-neutral-200 bg-white/95 p-0.5 text-xs shadow-sm backdrop-blur">
+		<div className="relative flex max-w-[50vw] items-center rounded-[10px] border border-black/6 bg-white/92 p-1 text-[13px] shadow-[0_1px_2px_rgba(0,0,0,0.05)] backdrop-blur-md">
 			<div className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
 				{tabs.map((name) => (
 					<Tab
@@ -69,10 +69,10 @@ function Tab({ name, active, renaming, onRename, onRenameDone }: TabProps) {
 
 	return (
 		<div
-			className={`group flex shrink-0 items-center gap-1 rounded-md py-1 pr-1 pl-2.5 ${
+			className={`group flex shrink-0 items-center gap-1 rounded-[7px] py-1 pr-1.5 pl-3 ${
 				active
-					? "bg-amber-100 text-amber-900"
-					: "text-neutral-600 hover:bg-neutral-100"
+					? "bg-neutral-100 font-medium text-neutral-800"
+					: "text-neutral-500 hover:bg-neutral-100"
 			}`}
 			onAuxClick={(e) => {
 				if (e.button === 1) void closeTab(name);

@@ -10,24 +10,29 @@ import { useAppStore } from "@/state/store";
 
 const DELAY_MS = 400;
 
-type Saved = Pick<DocumentState, "pieces" | "stock" | "measurements">;
+type Saved = Pick<
+	DocumentState,
+	"pieces" | "stock" | "measurements" | "joints"
+>;
 
 /** The document parts last written (or loaded) for the active project. */
 let baseline: Saved | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
 let inFlight: Promise<void> | null = null;
 
-const savedParts = ({ pieces, stock, measurements }: DocumentState): Saved => ({
+const savedParts = ({
 	pieces,
 	stock,
 	measurements,
-});
+	joints,
+}: DocumentState): Saved => ({ pieces, stock, measurements, joints });
 
 const isDirty = (doc: DocumentState) =>
 	baseline !== null &&
 	(doc.pieces !== baseline.pieces ||
 		doc.stock !== baseline.stock ||
-		doc.measurements !== baseline.measurements);
+		doc.measurements !== baseline.measurements ||
+		doc.joints !== baseline.joints);
 
 const setStatus = (saveStatus: "saved" | "saving" | "error") =>
 	useProjectsStore.setState({ saveStatus });

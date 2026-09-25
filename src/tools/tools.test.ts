@@ -1,8 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { vec3 } from "@/geometry/vec";
 import { snapTargets } from "@/snapping/targets";
-import { rail } from "@/test/fixtures";
+import { emptyHistory } from "@/state/history";
+import { useAppStore } from "@/state/store";
+import { docWith, rail, sheet } from "@/test/fixtures";
 import { typedSize } from "@/tools/creatorSession";
+import { confirmJoin, openJoiner } from "@/tools/joinSession";
 import { computeMove } from "@/tools/moveTool";
 import { computeRotation } from "@/tools/rotateTool";
 
@@ -89,5 +92,40 @@ describe("typedSize (create wheel)", () => {
 		expect(typedSize("sheet", "")).toBeNull();
 		expect(typedSize("sheet", "0")).toBeNull();
 		expect(typedSize("framing", "45x.")).toBeNull();
+	});
+});
+
+describe("join wheel", () => {
+	// A board and a rail pressed 9 mm into it, both selected.
+	const board = sheet({ id: "board" });
+	const housed = rail({ id: "housed", position: vec3(600, 300, 40.5) });
+
+	beforeEach(() => {
+		useAppStore.setState({
+			doc: { ...docWith([board, housed]), selection: ["board", "housed"] },
+			history: emptyHistory,
+			joiner: null,
+		});
+	});
+
+	it("preselects the larger piece and cuts it in one undo step", () => {
+		openJoiner({ x: 0, y: 0 });
+		expect(useAppStore.getState().joiner?.highlighted).toBe("board");
+		confirmJoin();
+		const { doc, history, joiner } = useAppStore.getState();
+		expect(joiner).toBeNull();
+		expect(Object.values(doc.joints)).toMatchObject([
+			{ target: "board", tool: "housed" },
+		]);
+		expect(history.past).toHaveLength(1);
+	});
+
+	it("won't open when the selected pieces only touch", () => {
+		const onTop = rail({ id: "housed", position: vec3(600, 300, 49.5) });
+		useAppStore.setState({
+			doc: { ...docWith([board, onTop]), selection: ["board", "housed"] },
+		});
+		openJoiner({ x: 0, y: 0 });
+		expect(useAppStore.getState().joiner).toBeNull();
 	});
 });

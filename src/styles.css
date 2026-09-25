@@ -1,4 +1,12 @@
+@import url("https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
+
+/* Light UI (from the Claude Design "Rebecca Light" design): Barlow text, condensed caps for titles, mono numbers. */
+@theme {
+	--font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+	--font-condensed: "Barlow Condensed", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
 
 html,
 body,

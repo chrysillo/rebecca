@@ -11,12 +11,14 @@ describe("project files", () => {
 		expect(loaded.pieces).toEqual(doc.pieces);
 		expect(loaded.stock).toEqual(doc.stock);
 		expect(loaded.measurements).toEqual(doc.measurements);
+		expect(loaded.joints).toEqual(doc.joints);
 		expect(loaded.selection).toEqual([]);
 	});
 
 	it("fills in collections an older file lacks", () => {
 		const loaded = fromProjectFile({ version: 1, pieces: {}, stock: {} });
 		expect(loaded.measurements).toEqual({});
+		expect(loaded.joints).toEqual({});
 	});
 
 	it("refuses files it doesn't understand", () => {

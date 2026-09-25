@@ -2,6 +2,7 @@ import { piecesAabb } from "@/geometry/box";
 import { extrudeAll } from "@/geometry/extrude";
 import { selectionPivotPoint } from "@/geometry/pivot";
 import { add, scale, type Vec3 } from "@/geometry/vec";
+import { jointsCutting } from "@/model/joint";
 import type { Id, Piece, Pivot } from "@/model/types";
 import type { DocumentState } from "@/state/document";
 import type { DragState } from "@/state/drag";
@@ -53,7 +54,15 @@ export function extrudePreview(
 	);
 }
 
-export type DisplayPiece = { piece: Piece; selected: boolean; ghost: boolean };
+export type DisplayPiece = {
+	piece: Piece;
+	selected: boolean;
+	ghost: boolean;
+	/** Pieces cut out of this one (as displayed, so a cut follows a dragged tool). */
+	cutters: Piece[];
+	/** While the join wheel is open: the piece that would be cut, or one that would cut it. */
+	joinRole?: "target" | "tool";
+};
 
 /**
  * What the scene should draw: the document with any drag or extrude preview applied.
@@ -71,19 +80,31 @@ export function displayPieces(
 		const piece = extruded[original.id] ?? original;
 		const preview = drag?.preview[piece.id];
 		if (preview && drag.duplicate) {
-			result.push({ piece, selected: false, ghost: false });
+			result.push({ piece, selected: false, ghost: false, cutters: [] });
+			// Copies are uncut blanks.
 			result.push({
 				piece: { ...piece, ...preview, id: `${piece.id}:copy` },
 				selected: true,
 				ghost: true,
+				cutters: [],
 			});
 		} else {
 			result.push({
 				piece: preview ? { ...piece, ...preview } : piece,
 				selected: selected.has(piece.id),
 				ghost: false,
+				cutters: [],
 			});
 		}
+	}
+	const shown = new Map(
+		result.filter((d) => !d.ghost).map((d) => [d.piece.id, d.piece]),
+	);
+	for (const item of result) {
+		if (item.ghost) continue;
+		item.cutters = jointsCutting(doc.joints, item.piece.id).flatMap(
+			(j) => shown.get(j.tool) ?? [],
+		);
 	}
 	return result;
 }

@@ -10,6 +10,7 @@ import {
 import { useAppStore } from "@/state/store";
 import { cancelCreator, openCreator } from "@/tools/creatorSession";
 import { startExtrude } from "@/tools/extrudeSession";
+import { cancelJoiner, openJoiner } from "@/tools/joinSession";
 import { cancelMeasure } from "@/tools/measureSession";
 
 const store = () => useAppStore.getState();
@@ -27,6 +28,8 @@ export const ACTIONS: Record<Action, () => void> = {
 	measureTool: () =>
 		store().setTool(store().tool === "measure" ? "move" : "measure"),
 	extrude: startExtrude,
+	// Opens the join wheel at the mouse to pick which overlapping piece gets cut.
+	join: () => (store().joiner ? cancelJoiner() : openJoiner(lastPointer())),
 	selectAll: () =>
 		store().apply(commands.selectPieces(Object.keys(store().doc.pieces))),
 	delete: () => store().apply(commands.deletePieces(store().doc.selection)),
@@ -35,6 +38,7 @@ export const ACTIONS: Record<Action, () => void> = {
 	escape: () => {
 		// Escape closes the wheel, a half-made measurement or a drag first; otherwise it deselects.
 		if (store().creator) cancelCreator();
+		else if (store().joiner) cancelJoiner();
 		else if (cancelMeasure()) return;
 		else if (store().drag) store().setDrag(null);
 		else store().apply(commands.clearSelection);

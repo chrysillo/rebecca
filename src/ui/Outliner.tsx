@@ -53,12 +53,14 @@ function Row({ piece, selected, renaming, onRename, onRenameDone }: RowProps) {
 
 	return (
 		<li
-			className={`flex items-center gap-2 rounded px-1 py-1 text-xs ${
-				selected ? "bg-blue-100 text-blue-900" : "hover:bg-neutral-100"
+			className={`flex h-7.5 items-center gap-2 rounded-md px-2 text-[13px] ${
+				selected
+					? "bg-[#f0f0f0] font-medium text-neutral-800"
+					: "text-neutral-700 hover:bg-neutral-50"
 			}`}
 		>
 			<span
-				className={`h-2.5 w-2.5 shrink-0 rounded-sm ${piece.kind === "sheet" ? "bg-[#dcc196]" : "bg-[#c99a63]"}`}
+				className={`h-2 w-2 shrink-0 rounded-[2px] ${piece.kind === "sheet" ? "bg-[#dcc196]" : "bg-[#c99a63]"}`}
 				title={kindName(piece.kind)}
 			/>
 			{renaming ? (
@@ -84,7 +86,7 @@ function Row({ piece, selected, renaming, onRename, onRenameDone }: RowProps) {
 					title="Click to select (Shift/⌘ to add), double-click to rename"
 				>
 					<span className="truncate">{piece.name}</span>
-					<span className="shrink-0 text-[10px] tabular-nums text-neutral-400">
+					<span className="shrink-0 font-mono text-[10px] font-normal tabular-nums text-neutral-400">
 						{size}
 					</span>
 				</button>

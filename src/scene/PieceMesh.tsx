@@ -1,9 +1,18 @@
-import { Edges } from "@react-three/drei";
+import { Line } from "@react-three/drei";
 import { type ThreeEvent, useThree } from "@react-three/fiber";
-import { Color } from "three";
+import { useEffect, useMemo } from "react";
+import {
+	BoxGeometry,
+	type BufferGeometry,
+	Color,
+	type Intersection,
+} from "three";
 import { commands } from "@/commands";
-import { faceFromLocalNormal } from "@/geometry/box";
+import { type FaceRef, faceFromLocalNormal } from "@/geometry/box";
+import { cutGeometry } from "@/geometry/cut";
+import { featureEdges } from "@/geometry/edges";
 import { extrudableDimension } from "@/geometry/extrude";
+import type { Vec3 } from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
 import type { Piece } from "@/model/types";
 import { isGizmoObject } from "@/scene/gizmoStyle";
@@ -26,19 +35,84 @@ const SELECTED_COLORS = {
 };
 const SELECTED_EDGE = "#2563eb";
 
+/** Join wheel preview: the piece to be cut glows amber; the pieces cutting it (pulled clear) are faded. */
+const JOIN_TARGET_TINT = "#f5a524";
+const JOIN_TARGET_COLORS = {
+	sheet: new Color(COLORS.sheet).lerp(new Color(JOIN_TARGET_TINT), 0.65),
+	framing: new Color(COLORS.framing).lerp(new Color(JOIN_TARGET_TINT), 0.65),
+};
+const JOIN_TARGET_EDGE = "#b45309";
+const JOIN_TOOL_OPACITY = 0.4;
+
 /** Max pointer travel (px) between press and release for it to count as a click. */
 const CLICK_SLOP = 3;
 
-type Props = { piece: Piece; selected: boolean; ghost: boolean };
+/** How near (mm) a hit must be to the box's outside to count as that face rather than inside a cut. */
+const SURFACE_TOLERANCE = 0.05;
+
+type Props = {
+	piece: Piece;
+	selected: boolean;
+	ghost: boolean;
+	cutters: Piece[];
+	joinRole?: "target" | "tool";
+	/** Drawn this far from where the piece really is (the join preview pulls tools clear). */
+	displayOffset?: Vec3;
+};
+
+/** Everything the shape depends on, so the (costly) cut is only redone when one of these changes. */
+const shapeKey = (piece: Piece, cutters: Piece[]) =>
+	JSON.stringify(
+		[piece, ...cutters].map((p) => [pieceSize(p), p.position, p.rotation]),
+	);
+
+/** The box, with any joints cut out of it, and the lines outlining it. Disposed when replaced. */
+function usePieceGeometry(
+	piece: Piece,
+	cutters: Piece[],
+): { geometry: BufferGeometry; edges: number[] } {
+	const key = cutters.length ? shapeKey(piece, cutters) : "";
+	const size = pieceSize(piece);
+	// biome-ignore lint/correctness/useExhaustiveDependencies: `key` stands for piece and cutters.
+	const shape = useMemo(() => {
+		const geometry = cutters.length
+			? cutGeometry(piece, cutters)
+			: new BoxGeometry(size.x, size.y, size.z);
+		return { geometry, edges: featureEdges(geometry) };
+	}, [key, size.x, size.y, size.z]);
+	useEffect(() => () => shape.geometry.dispose(), [shape]);
+	return shape;
+}
+
+/**
+ * True if a hit lies on the box's own face, not on a surface inside a cut (whose normal would
+ * otherwise be mistaken for the outside face pointing the same way).
+ */
+function onOuterFace(hit: Intersection, face: FaceRef, size: Vec3): boolean {
+	const local = hit.object.worldToLocal(hit.point.clone());
+	return (
+		Math.abs(Math.abs(local[face.axis]) - size[face.axis] / 2) <
+		SURFACE_TOLERANCE
+	);
+}
 
 /**
  * Draws one piece as a box. Click selects the face under the cursor (or the whole piece, if that
  * face can't be extruded); double-click selects the piece. Shift adds to / removes from the selection.
  */
-export function PieceMesh({ piece, selected, ghost }: Props) {
+export function PieceMesh({
+	piece,
+	selected,
+	ghost,
+	cutters,
+	joinRole,
+	displayOffset,
+}: Props) {
 	const size = pieceSize(piece);
+	const { geometry, edges } = usePieceGeometry(piece, cutters);
 	const viewport = useThree((st) => st.size);
 	const { position: p, rotation: r } = piece;
+	const see = ghost || joinRole === "tool";
 
 	const onClick = (e: ThreeEvent<MouseEvent>) => {
 		// Gizmo parts (drawn on top) get the click even if the piece is nearer: let it through to them.
@@ -50,9 +124,11 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 		const hit = e.intersections.find((i) => i.object === e.eventObject);
 		if (!hit?.face) return;
 		const face = faceFromLocalNormal(piece.id, hit.face.normal);
+		const outside = onOuterFace(hit, face, size);
 		// Measure tool: the click picks the edge of this face nearest the pointer; nothing gets selected.
 		if (useAppStore.getState().tool === "measure") {
-			measureClick(pickEdge(piece, face, e.camera, e.pointer, viewport));
+			if (outside)
+				measureClick(pickEdge(piece, face, e.camera, e.pointer, viewport));
 			return;
 		}
 		const shift = e.nativeEvent.shiftKey;
@@ -62,8 +138,8 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 			applyCommand(commands.togglePiece(piece.id));
 			return;
 		}
-		// A face that can't be extruded (sheet top, rail side) selects the whole piece instead.
-		if (!extrudableDimension(piece, face)) {
+		// A face that can't be extruded (sheet top, rail side), or a surface inside a cut, selects the whole piece.
+		if (!outside || !extrudableDimension(piece, face)) {
 			applyCommand(
 				shift
 					? commands.togglePiece(piece.id)
@@ -85,7 +161,11 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 		if (!hit?.face) return;
 		e.stopPropagation();
 		const face = faceFromLocalNormal(piece.id, hit.face.normal);
-		setMeasureHover(pickEdge(piece, face, e.camera, e.pointer, viewport));
+		setMeasureHover(
+			onOuterFace(hit, face, size)
+				? pickEdge(piece, face, e.camera, e.pointer, viewport)
+				: null,
+		);
 	};
 
 	const onPointerOut = () => {
@@ -104,26 +184,50 @@ export function PieceMesh({ piece, selected, ghost }: Props) {
 		);
 	};
 
+	const o = displayOffset ?? { x: 0, y: 0, z: 0 };
 	return (
 		<mesh
-			position={[p.x, p.y, p.z]}
+			geometry={geometry}
+			position={[p.x + o.x, p.y + o.y, p.z + o.z]}
 			rotation={[r.x * DEG, r.y * DEG, r.z * DEG]}
 			onClick={onClick}
 			onPointerMove={onPointerMove}
 			onPointerOut={onPointerOut}
 			onDoubleClick={onDoubleClick}
 		>
-			<boxGeometry args={[size.x, size.y, size.z]} />
 			<meshStandardMaterial
-				color={selected ? SELECTED_COLORS[piece.kind] : COLORS[piece.kind]}
-				transparent={ghost}
-				opacity={ghost ? 0.6 : 1}
+				color={
+					joinRole === "target"
+						? JOIN_TARGET_COLORS[piece.kind]
+						: selected && !joinRole
+							? SELECTED_COLORS[piece.kind]
+							: COLORS[piece.kind]
+				}
+				transparent={see}
+				opacity={joinRole === "tool" ? JOIN_TOOL_OPACITY : ghost ? 0.6 : 1}
+				// So what's behind a see-through piece (e.g. the cut it would make) still draws.
+				depthWrite={!see}
+				// Pushed back so outlines always win over faces, including a neighbour's flush face.
 				polygonOffset
 				polygonOffsetFactor={1}
+				polygonOffsetUnits={2}
 			/>
-			<Edges
-				color={selected ? SELECTED_EDGE : "#5c4a32"}
-				lineWidth={selected ? 2.5 : 1}
+			<Line
+				segments
+				points={edges}
+				raycast={() => null}
+				color={
+					joinRole === "target"
+						? JOIN_TARGET_EDGE
+						: joinRole === "tool"
+							? "#8a7a64"
+							: selected
+								? SELECTED_EDGE
+								: "#5c4a32"
+				}
+				lineWidth={
+					joinRole === "target" ? 2.5 : selected && !joinRole ? 2.5 : 1
+				}
 			/>
 		</mesh>
 	);

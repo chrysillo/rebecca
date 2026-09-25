@@ -1,4 +1,4 @@
-import { GizmoHelper } from "@react-three/drei";
+import { GizmoHelper, Line } from "@react-three/drei";
 import { type ThreeEvent, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,6 +8,7 @@ import {
 	Vector3,
 } from "three";
 import { piecesAabb } from "@/geometry/box";
+import { AXIS_X, AXIS_Y, AXIS_Z } from "@/scene/Floor";
 import { useAppStore } from "@/state/store";
 
 type OrbitLike = { target: Vector3; enabled: boolean; update: () => void };
@@ -24,6 +25,17 @@ type Animation = {
 
 const DURATION = 0.35; // seconds
 const CUBE_SIZE = 90; // pixels
+/** Face tints in FACES order, so the cube reads as lit from above and the front. */
+const FACE_SHADE = [
+	"#ececec",
+	"#ececec",
+	"#ffffff",
+	"#f0f0f0",
+	"#f6f6f6",
+	"#f6f6f6",
+];
+const HOVER_SHADE = "#dcdcdc";
+const LABEL_FONT = '600 28px "Barlow Condensed", system-ui, sans-serif';
 
 /**
  * Faces in BoxGeometry material order (+X, -X, +Y, -Y, +Z, -Z of the cube mesh), with the
@@ -85,10 +97,11 @@ export function ViewCube() {
 	};
 
 	return (
-		<GizmoHelper alignment="top-right" margin={[85, 85]}>
+		<GizmoHelper alignment="top-right" margin={[100, 100]}>
 			<group rotation={[Math.PI / 2, 0, 0]} scale={CUBE_SIZE}>
 				<FaceCube onPick={lookFrom} controls={controls} />
 			</group>
+			<AxisTriad />
 		</GizmoHelper>
 	);
 }
@@ -120,7 +133,19 @@ type FaceCubeProps = {
 
 function FaceCube({ onPick, controls }: FaceCubeProps) {
 	const [hovered, setHovered] = useState<number | null>(null);
-	const textures = useMemo(() => FACES.map((f) => labelTexture(f.label)), []);
+	const [textures, setTextures] = useState(() =>
+		FACES.map((f) => labelTexture(f.label)),
+	);
+	// Redraw the labels once the UI font has loaded (canvas text doesn't wait for web fonts).
+	useEffect(() => {
+		let live = true;
+		document.fonts.load(LABEL_FONT).then(() => {
+			if (live) setTextures(FACES.map((f) => labelTexture(f.label)));
+		});
+		return () => {
+			live = false;
+		};
+	}, []);
 	useEffect(
 		() => () => {
 			for (const t of textures) t.dispose();
@@ -161,7 +186,7 @@ function FaceCube({ onPick, controls }: FaceCubeProps) {
 					key={FACES[i].label}
 					attach={`material-${i}`}
 					map={texture}
-					color={hovered === i ? "#f2b36b" : "#ffffff"}
+					color={hovered === i ? HOVER_SHADE : FACE_SHADE[i]}
 				/>
 			))}
 		</mesh>
@@ -174,16 +199,84 @@ function labelTexture(label: string): CanvasTexture {
 	canvas.width = canvas.height = size;
 	const ctx = canvas.getContext("2d");
 	if (ctx) {
-		ctx.fillStyle = "#f5f3ef";
+		ctx.fillStyle = "#ffffff";
 		ctx.fillRect(0, 0, size, size);
-		ctx.strokeStyle = "#8a8478";
-		ctx.lineWidth = 4;
-		ctx.strokeRect(2, 2, size - 4, size - 4);
-		ctx.fillStyle = "#3d3529";
-		ctx.font = "600 22px system-ui, sans-serif";
+		ctx.strokeStyle = "#d4d4d4";
+		ctx.lineWidth = 3;
+		ctx.strokeRect(1.5, 1.5, size - 3, size - 3);
+		ctx.fillStyle = "#737373";
+		ctx.font = LABEL_FONT;
+		ctx.letterSpacing = "2px";
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
 		ctx.fillText(label.toUpperCase(), size / 2, size / 2);
+	}
+	return new CanvasTexture(canvas);
+}
+
+/** Where the axis triad starts (a corner just outside the unit cube) and how far its arms reach. */
+const TRIAD_ORIGIN = -0.54;
+const TRIAD_LENGTH = 1.3;
+const AXES = [
+	{ name: "X", dir: [1, 0, 0], color: AXIS_X },
+	{ name: "Y", dir: [0, 1, 0], color: AXIS_Y },
+	{ name: "Z", dir: [0, 0, 1], color: AXIS_Z },
+] as const;
+
+/** X / Y / Z arms from the cube's back-bottom-left corner, labelled, in the axis colours. */
+function AxisTriad() {
+	const letters = useMemo(
+		() => AXES.map((a) => letterTexture(a.name, a.color)),
+		[],
+	);
+	useEffect(
+		() => () => {
+			for (const t of letters) t.dispose();
+		},
+		[letters],
+	);
+	const along = (dir: readonly number[], length: number) =>
+		dir.map((d) => TRIAD_ORIGIN + d * length) as [number, number, number];
+	const origin: [number, number, number] = [
+		TRIAD_ORIGIN,
+		TRIAD_ORIGIN,
+		TRIAD_ORIGIN,
+	];
+
+	return (
+		<group scale={CUBE_SIZE}>
+			{AXES.map((a, i) => (
+				<group key={a.name}>
+					<Line
+						points={[origin, along(a.dir, TRIAD_LENGTH)]}
+						color={a.color}
+						lineWidth={1.5}
+						raycast={() => null}
+					/>
+					<sprite
+						position={along(a.dir, TRIAD_LENGTH + 0.2)}
+						scale={0.26}
+						raycast={() => null}
+					>
+						<spriteMaterial map={letters[i]} />
+					</sprite>
+				</group>
+			))}
+		</group>
+	);
+}
+
+function letterTexture(letter: string, color: string): CanvasTexture {
+	const size = 64;
+	const canvas = document.createElement("canvas");
+	canvas.width = canvas.height = size;
+	const ctx = canvas.getContext("2d");
+	if (ctx) {
+		ctx.fillStyle = color;
+		ctx.font = '600 40px "JetBrains Mono", ui-monospace, monospace';
+		ctx.textAlign = "center";
+		ctx.textBaseline = "middle";
+		ctx.fillText(letter, size / 2, size / 2);
 	}
 	return new CanvasTexture(canvas);
 }

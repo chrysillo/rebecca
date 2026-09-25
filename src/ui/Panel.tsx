@@ -19,7 +19,7 @@ export function Panel({
 	const showBody = !collapsible || open;
 
 	return (
-		<section className="w-60 rounded-lg border border-neutral-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+		<section className="w-62 rounded-xl border border-black/6 bg-white/92 shadow-[0_1px_2px_rgba(0,0,0,0.05),0_6px_16px_rgba(0,0,0,0.05)] backdrop-blur-md p-3.5">
 			{collapsible ? (
 				<button
 					type="button"
@@ -37,14 +37,16 @@ export function Panel({
 			) : (
 				<PanelTitle>{title}</PanelTitle>
 			)}
-			{showBody && <div className="mt-2 flex flex-col gap-3">{children}</div>}
+			{showBody && (
+				<div className="mt-3.5 flex flex-col gap-3.5">{children}</div>
+			)}
 		</section>
 	);
 }
 
 function PanelTitle({ children }: { children: ReactNode }) {
 	return (
-		<h2 className="text-xs font-semibold uppercase tracking-wide text-neutral-600">
+		<h2 className="font-condensed text-sm font-semibold uppercase leading-none tracking-[0.12em] text-neutral-600">
 			{children}
 		</h2>
 	);
@@ -58,8 +60,8 @@ export function Group({
 	children: ReactNode;
 }) {
 	return (
-		<div className="flex flex-col gap-1">
-			<h3 className="text-[11px] font-medium text-neutral-400">{title}</h3>
+		<div className="flex flex-col gap-1.5">
+			<h3 className="text-[11px] text-neutral-400">{title}</h3>
 			{children}
 		</div>
 	);
@@ -77,7 +79,7 @@ export function Button({
 	return (
 		<button
 			type="button"
-			className="rounded border border-neutral-300 bg-neutral-50 px-2 py-1 text-xs hover:bg-amber-50 disabled:opacity-40 disabled:hover:bg-neutral-50"
+			className="h-7 rounded-md bg-neutral-100 px-2.5 text-xs font-medium text-neutral-700 hover:bg-neutral-200 disabled:opacity-40 disabled:hover:bg-neutral-100"
 			onClick={onClick}
 			disabled={disabled}
 		>

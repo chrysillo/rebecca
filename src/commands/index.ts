@@ -1,4 +1,5 @@
 /** Every way the document can change. UI, keybindings and tools all go through these. */
+import { flipJoint, joinInto, removeJoint } from "@/commands/joints";
 import { addMeasurement, removeMeasurement } from "@/commands/measurements";
 import {
 	addPiece,
@@ -27,6 +28,9 @@ import {
 import { setTransforms } from "@/commands/transform";
 
 export const commands = {
+	flipJoint,
+	joinInto,
+	removeJoint,
 	addMeasurement,
 	removeMeasurement,
 	addPiece,

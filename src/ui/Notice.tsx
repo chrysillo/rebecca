@@ -19,8 +19,9 @@ export function Notice() {
 		<div className="pointer-events-none absolute inset-x-0 bottom-12 flex justify-center">
 			<div
 				role="status"
-				className="rounded-md bg-neutral-900/90 px-3 py-1.5 text-xs text-white shadow"
+				className="flex items-center gap-2 rounded-lg bg-neutral-800/92 px-3.5 py-2 text-xs text-white shadow"
 			>
+				<span className="h-1.5 w-1.5 rounded-[2px] bg-amber-300" />
 				{notice.text}
 			</div>
 		</div>

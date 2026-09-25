@@ -10,16 +10,20 @@ const HINTS = [
 	["Shift + drag", "1 mm / 5° steps"],
 	["Alt + move/rotate", "duplicate"],
 	["E", "extrude face (type mm, Enter)"],
+	["J", "join: cut overlapping pieces"],
 	["Esc", "deselect / cancel"],
 ] as const;
 
 /** Bottom-left reminder of mouse and modifier controls (key shortcuts are on the tool strip). */
 export function KeyHints() {
 	return (
-		<ul className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-neutral-500">
+		<ul className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-neutral-500">
 			{HINTS.map(([key, action]) => (
-				<li key={key}>
-					<kbd className="font-semibold text-neutral-700">{key}</kbd> {action}
+				<li key={key} className="flex items-center gap-1.5">
+					<kbd className="rounded border border-neutral-200 bg-white/85 px-1.5 py-0.5 font-mono text-[10px] font-medium leading-tight text-neutral-600">
+						{key}
+					</kbd>
+					{action}
 				</li>
 			))}
 		</ul>

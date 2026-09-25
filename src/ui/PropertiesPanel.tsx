@@ -122,7 +122,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 			</p>
 			<Group title="Stock">
 				<select
-					className="rounded border border-neutral-300 bg-white px-1.5 py-1 text-xs focus:border-amber-500 focus:outline-none"
+					className="h-7 rounded-md border border-transparent bg-neutral-100 px-2 text-[13px] text-neutral-800 focus:border-amber-500 focus:bg-white focus:outline-none"
 					value={piece.stockId}
 					onChange={(e) =>
 						applyCommand(commands.setPieceStock(piece.id, e.target.value))
@@ -135,6 +135,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 					))}
 				</select>
 			</Group>
+			<Joints piece={piece} />
 			<Group title="Dimensions">
 				{dimensionEntries(piece).map((d) => (
 					<NumberField
@@ -152,5 +153,48 @@ function PieceProperties({ piece }: { piece: Piece }) {
 				))}
 			</Group>
 		</Panel>
+	);
+}
+
+/** The piece's joints, each with a × to remove it. Nothing when it has none. */
+function Joints({ piece }: { piece: Piece }) {
+	const joints = useAppStore((s) => s.doc.joints);
+	const pieces = useAppStore((s) => s.doc.pieces);
+	const mine = Object.values(joints).filter(
+		(j) => j.target === piece.id || j.tool === piece.id,
+	);
+	if (mine.length === 0) return null;
+	return (
+		<Group title="Joints">
+			<ul className="flex flex-col gap-0.5 text-xs text-neutral-700">
+				{mine.map((j) => (
+					<li key={j.id} className="flex items-center justify-between gap-2">
+						<span className="truncate">
+							{j.target === piece.id
+								? `Cut by ${pieces[j.tool]?.name}`
+								: `Cuts ${pieces[j.target]?.name}`}
+						</span>
+						<button
+							type="button"
+							aria-label="Flip which piece is cut"
+							title="Flip which piece is cut"
+							className="ml-auto rounded px-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+							onClick={() => applyCommand(commands.flipJoint(j.id))}
+						>
+							⇄
+						</button>
+						<button
+							type="button"
+							aria-label="Remove joint"
+							title="Remove joint"
+							className="rounded px-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700"
+							onClick={() => applyCommand(commands.removeJoint(j.id))}
+						>
+							×
+						</button>
+					</li>
+				))}
+			</ul>
+		</Group>
 	);
 }

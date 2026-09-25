@@ -62,6 +62,12 @@ export const deletePieces =
 					([, m]) => pieces[m.from.pieceId] && pieces[m.to.pieceId],
 				),
 			),
+			// Likewise a joint needs both its pieces.
+			joints: Object.fromEntries(
+				Object.entries(doc.joints).filter(
+					([, j]) => pieces[j.target] && pieces[j.tool],
+				),
+			),
 		};
 	};
 

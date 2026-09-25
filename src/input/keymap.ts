@@ -5,6 +5,7 @@ export type Action =
 	| "moveTool"
 	| "measureTool"
 	| "extrude"
+	| "join"
 	| "selectAll"
 	| "delete"
 	| "undo"
@@ -34,6 +35,7 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 	// T for tape measure, as in SketchUp.
 	measureTool: [{ code: "KeyT", mod: false }],
 	extrude: [{ code: "KeyE", mod: false }],
+	join: [{ code: "KeyJ", mod: false }],
 	selectAll: [{ code: "KeyA", mod: true, shift: false }],
 	delete: [{ code: "Delete" }, { code: "Backspace" }],
 	undo: [{ code: "KeyZ", mod: true, shift: false }],

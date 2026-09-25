@@ -49,6 +49,14 @@ export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 			<path d="M12 11 V3 M9 6 L12 3 L15 6" />
 		</Icon>
 	),
+	// Two boards, one notched to take the other: a housing joint.
+	join: (
+		<Icon>
+			<path d="M3 13 H9 V9 H15 V13 H21 V19 H3 Z" />
+			<path d="M9 3 H15 V13" />
+			<path d="M9 3 V9" />
+		</Icon>
+	),
 	undo: (
 		<Icon>
 			<path d="M9 14 L4 9 L9 4" />

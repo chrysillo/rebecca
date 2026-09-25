@@ -35,7 +35,7 @@ export function StockPanel() {
 			))}
 			<button
 				type="button"
-				className="self-start text-[11px] text-blue-600 hover:underline"
+				className="self-start text-xs font-medium text-neutral-700 hover:text-amber-700"
 				onClick={() => applyCommand(commands.addStock(suggest(stock, kind)))}
 			>
 				+ Add {kindName(kind).toLowerCase()} size
@@ -56,8 +56,8 @@ function StockRow({ stock, used }: { stock: Stock; used: number }) {
 		applyCommand(commands.updateStock(stock.id, size));
 
 	return (
-		<div className="flex items-start gap-1 rounded border border-neutral-200 p-1.5">
-			<div className="flex flex-1 flex-col gap-1">
+		<div className="flex items-start gap-1">
+			<div className="flex flex-1 flex-col gap-1.5">
 				{stock.kind === "sheet" ? (
 					<NumberField
 						label="Thickness"
@@ -84,7 +84,7 @@ function StockRow({ stock, used }: { stock: Stock; used: number }) {
 						/>
 					</>
 				)}
-				<span className="text-[10px] text-neutral-400">
+				<span className="text-[11px] text-neutral-400">
 					{used === 0
 						? "Not used"
 						: `Used by ${used} piece${used > 1 ? "s" : ""}`}
