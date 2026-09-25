@@ -63,8 +63,7 @@ export type ProjectFile = {
 	stock: Record<Id, Stock>;
 	measurements: Record<Id, Measurement>;
 	joints: Record<Id, Joint>;
-	/** Optional: files saved before grouping existed have none. */
-	groups?: Record<Id, Group>;
+	groups: Record<Id, Group>;
 };
 
 export const toProjectFile = (doc: DocumentState): ProjectFile => ({
@@ -76,19 +75,34 @@ export const toProjectFile = (doc: DocumentState): ProjectFile => ({
 	groups: doc.groups,
 });
 
-/** Reads a saved project, filling in anything an older file lacks. Throws on a file it can't read. */
+/** The collections every project file must have. */
+const FILE_COLLECTIONS = [
+	"pieces",
+	"stock",
+	"measurements",
+	"joints",
+	"groups",
+] as const;
+
+/** Reads a saved project. Throws on a file it can't read, including one missing a collection. */
 export function fromProjectFile(json: unknown): DocumentState {
 	if (typeof json !== "object" || json === null)
 		throw new Error("Not a project file");
 	const file = json as Partial<ProjectFile>;
 	if (file.version !== FILE_VERSION)
 		throw new Error(`Unsupported project version: ${String(file.version)}`);
+	const missing = FILE_COLLECTIONS.filter(
+		(key) => typeof file[key] !== "object" || file[key] === null,
+	);
+	if (missing.length > 0)
+		throw new Error(`Project file is missing ${missing.join(", ")}`);
+	const { pieces, stock, measurements, joints, groups } = file as ProjectFile;
 	return {
-		pieces: file.pieces ?? {},
-		stock: file.stock ?? starterStock(),
-		measurements: file.measurements ?? {},
-		joints: file.joints ?? {},
-		groups: file.groups ?? {},
+		pieces,
+		stock,
+		measurements,
+		joints,
+		groups,
 		selection: [],
 		groupPivot: "centre",
 		selectedFaces: [],

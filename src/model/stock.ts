@@ -48,6 +48,12 @@ export const orderedStock = (stock: Record<Id, Stock>): Stock[] => [
 	...stockOfKind(stock, "framing"),
 ];
 
+/** True if every value given in `size` matches the stock's own. */
+export const sizeMatches = (s: Stock, size: Partial<StockSize>): boolean =>
+	Object.entries(size).every(
+		([k, v]) => (stockSize(s) as Record<string, number>)[k] === v,
+	);
+
 /** An existing entry with exactly this size, if any. */
 export function findStock(
 	stock: Record<Id, Stock>,
@@ -55,11 +61,7 @@ export function findStock(
 	size: StockSize,
 ): Stock | undefined {
 	return Object.values(stock).find(
-		(s) =>
-			s.kind === kind &&
-			Object.entries(size).every(
-				([k, v]) => (s as unknown as Record<string, number>)[k] === v,
-			),
+		(s) => s.kind === kind && sizeMatches(s, size),
 	);
 }
 

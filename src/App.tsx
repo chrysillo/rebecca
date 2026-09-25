@@ -7,7 +7,7 @@ import { ExportBar } from "@/ui/ExportBar";
 import { JoinWheel } from "@/ui/JoinWheel";
 import { KeyHints } from "@/ui/KeyHints";
 import { Notice } from "@/ui/Notice";
-import { Outliner } from "@/ui/Outliner";
+import { Outliner } from "@/ui/outliner/Outliner";
 import { ProjectTabs } from "@/ui/ProjectTabs";
 import { PropertiesPanel } from "@/ui/PropertiesPanel";
 import { StockPanel } from "@/ui/StockPanel";

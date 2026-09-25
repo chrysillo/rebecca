@@ -1,5 +1,13 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
-import { AXES, type Axis, add, dot, scale, type Vec3 } from "@/geometry/vec";
+import {
+	AXES,
+	type Axis,
+	add,
+	DEG,
+	dot,
+	scale,
+	type Vec3,
+} from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
 import type { Id, Piece, Rotation } from "@/model/types";
 
@@ -13,8 +21,6 @@ export type FaceRef = { pieceId: Id; axis: Axis; sign: 1 | -1 };
 export type FacePlane = Plane & { face: FaceRef | null };
 
 export type Aabb = { min: Vec3; max: Vec3 };
-
-const DEG = Math.PI / 180;
 
 // three.js math is used internally only; inputs and outputs stay plain data.
 const toVector3 = (v: Vec3) => new Vector3(v.x, v.y, v.z);

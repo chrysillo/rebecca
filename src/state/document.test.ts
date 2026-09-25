@@ -15,10 +15,10 @@ describe("project files", () => {
 		expect(loaded.selection).toEqual([]);
 	});
 
-	it("fills in collections an older file lacks", () => {
-		const loaded = fromProjectFile({ version: 1, pieces: {}, stock: {} });
-		expect(loaded.measurements).toEqual({});
-		expect(loaded.joints).toEqual({});
+	it("refuses a file missing a collection", () => {
+		expect(() =>
+			fromProjectFile({ version: 1, pieces: {}, stock: {} }),
+		).toThrow("missing measurements, joints, groups");
 	});
 
 	it("refuses files it doesn't understand", () => {

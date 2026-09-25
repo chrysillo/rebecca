@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { commands } from "@/commands";
 import { cutListKey } from "@/model/cutListKey";
+import {
+	defaultGroupName,
+	expandToGroups,
+	type Group,
+	groupsWithin,
+	pruneGroups,
+} from "@/model/group";
 import { defaultName } from "@/model/naming";
 import {
 	findStock,
 	identicalRuns,
 	orderedStock,
 	type Stock,
+	sizeMatches,
 	stockSections,
 } from "@/model/stock";
 import { docWith, rail, sheet } from "@/test/fixtures";
@@ -60,6 +68,12 @@ describe("stock lookups", () => {
 		).toBeUndefined();
 	});
 
+	it("matches only the size values given", () => {
+		expect(sizeMatches(stock.f, { width: 38 })).toBe(true);
+		expect(sizeMatches(stock.f, { width: 38, depth: 90 })).toBe(false);
+		expect(sizeMatches(stock.s, { thickness: 18 })).toBe(true);
+	});
+
 	it("lists sheets before framing", () => {
 		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "f"]);
 	});
@@ -93,5 +107,31 @@ describe("identicalRuns", () => {
 		expect(
 			identicalRuns(section.pieces).map((run) => run.map((p) => p.id)),
 		).toEqual([["a", "c"], ["b"]]);
+	});
+});
+
+describe("groups", () => {
+	const groups: Record<string, Group> = {
+		g: { id: "g", name: "Group 2", pieceIds: ["a", "b"] },
+	};
+
+	it("expands ids to whole groups, in order, without repeats", () => {
+		expect(expandToGroups(groups, ["c", "b", "a"])).toEqual(["c", "a", "b"]);
+	});
+
+	it("finds groups wholly inside a set of ids", () => {
+		expect(groupsWithin(groups, ["a"])).toEqual([]);
+		expect(groupsWithin(groups, ["a", "b", "c"]).map((g) => g.id)).toEqual([
+			"g",
+		]);
+	});
+
+	it("names the next group after the highest number", () => {
+		expect(defaultGroupName(groups)).toBe("Group 3");
+	});
+
+	it("drops missing pieces and groups left with fewer than two", () => {
+		expect(pruneGroups(groups, () => true)).toBe(groups);
+		expect(pruneGroups(groups, (id) => id !== "b")).toEqual({});
 	});
 });

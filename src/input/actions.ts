@@ -1,7 +1,6 @@
 import { commands } from "@/commands";
 import type { Action } from "@/input/keymap";
 import { lastPointer } from "@/input/pointer";
-import { exportViews } from "@/scene/ViewExporter";
 import {
 	closeTab,
 	cycleTab,
@@ -10,10 +9,10 @@ import {
 } from "@/state/projects";
 import { useAppStore } from "@/state/store";
 import { cancelCreator, openCreator } from "@/tools/creatorSession";
+import { exportCutList, exportViews } from "@/tools/exports";
 import { startExtrude } from "@/tools/extrudeSession";
 import { cancelJoiner, openJoiner } from "@/tools/joinSession";
 import { cancelMeasure } from "@/tools/measureSession";
-import { exportCutList } from "@/ui/exports";
 
 const store = () => useAppStore.getState();
 

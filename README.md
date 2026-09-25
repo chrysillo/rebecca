@@ -13,3 +13,7 @@ npm run check      # biome lint + format
 ## Projects
 
 While `npm run dev` is running, every change autosaves to `projects/<name>.json` (a small dev-server API in `server/projectsPlugin.ts` writes the files). Open projects appear as tabs at the top: click to switch, double-click to rename, `+` for a new one, `▾` to reopen or delete a saved one. Shortcuts: ⌥N new, ⌥[ / ⌥] previous/next, ⌥W close.
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the code is organised and the rules for adding to it.
+
+See [ROADMAP.md](ROADMAP.md) for what's built and what's next.

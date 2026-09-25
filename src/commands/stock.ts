@@ -2,7 +2,12 @@ import { addPiece } from "@/commands/pieces";
 import { CONFIG } from "@/config";
 import { resizePiece } from "@/geometry/resize";
 import { createFraming, createSheet } from "@/model/createPiece";
-import { type Stock, type StockSize, stockSize } from "@/model/stock";
+import {
+	type Stock,
+	type StockSize,
+	sizeMatches,
+	stockSize,
+} from "@/model/stock";
 import type { Id, Piece } from "@/model/types";
 import type { Command } from "@/state/document";
 
@@ -21,12 +26,7 @@ export const updateStock =
 		)
 			return doc;
 		const next = { ...current, ...size } as Stock;
-		if (
-			Object.entries(size).every(
-				([k, v]) => (current as unknown as Record<string, number>)[k] === v,
-			)
-		)
-			return doc;
+		if (sizeMatches(current, size)) return doc;
 		const pieces = { ...doc.pieces };
 		for (const piece of Object.values(doc.pieces))
 			if (piece.stockId === id)

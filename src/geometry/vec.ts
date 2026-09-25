@@ -5,6 +5,9 @@ export type Axis = "x" | "y" | "z";
 
 export const AXES: readonly Axis[] = ["x", "y", "z"];
 
+/** Degrees to radians: rotations are stored in degrees, three.js wants radians. */
+export const DEG = Math.PI / 180;
+
 export const vec3 = (x = 0, y = 0, z = 0): Vec3 => ({ x, y, z });
 
 export const add = (a: Vec3, b: Vec3): Vec3 => ({

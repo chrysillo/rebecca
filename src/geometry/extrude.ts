@@ -1,7 +1,11 @@
 import { type FaceRef, faceNormal } from "@/geometry/box";
 import { clampToFloor, lowestZ } from "@/geometry/floor";
 import { add, roundMm, roundVec, scale } from "@/geometry/vec";
-import { dimensionAlong, isEditableDimension } from "@/model/dimensions";
+import {
+	dimensionAlong,
+	type EditableDimension,
+	isEditableDimension,
+} from "@/model/dimensions";
 import type { Id, Piece } from "@/model/types";
 
 /** Extruding can shrink a piece, but never below this. */
@@ -11,7 +15,7 @@ const MIN_DIMENSION = 1;
 export function extrudableDimension(
 	piece: Piece,
 	face: FaceRef,
-): string | null {
+): EditableDimension | null {
 	const key = dimensionAlong(piece.kind, face.axis);
 	return isEditableDimension(piece.kind, key) ? key : null;
 }
@@ -27,7 +31,7 @@ export function extrudePiece(
 ): Piece | null {
 	const key = extrudableDimension(piece, face);
 	if (!key) return null;
-	const current = (piece as unknown as Record<string, number>)[key];
+	const current = piece[key];
 	const normal = faceNormal(piece, face.axis, face.sign);
 
 	const build = (d: number): Piece => {
