@@ -1,7 +1,7 @@
 import { Euler, Quaternion, Vector3 } from "three";
-import type { Rotation } from "../model/types";
-import { rotationQuaternion } from "./box";
-import { type Axis, axisVector } from "./vec";
+import { rotationQuaternion } from "@/geometry/box";
+import { type Axis, axisVector } from "@/geometry/vec";
+import type { Rotation } from "@/model/types";
 
 const DEG = Math.PI / 180;
 

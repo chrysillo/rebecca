@@ -1,26 +1,32 @@
-import { commands } from "../commands";
-import { extrudableDimension } from "../geometry/extrude";
-import type { PieceKind } from "../model/types";
-import { effectiveDistance } from "../state/extrude";
-import { useAppStore } from "../state/store";
+import { commands } from "@/commands";
+import { extrudableDimension } from "@/geometry/extrude";
+import type { PieceKind } from "@/model/types";
+import { effectiveDistance } from "@/state/extrude";
+import { useAppStore } from "@/state/store";
 
 const store = () => useAppStore.getState();
 
-/** E: start extruding the selected face, or explain why not. */
+/** E: start extruding the selected face(s) together, or explain why not. */
 export function startExtrude() {
 	const { doc, setExtrude, showNotice } = store();
-	const face = doc.selectedFace;
-	const piece = face ? doc.pieces[face.pieceId] : undefined;
-	if (!face || !piece) {
-		showNotice("Click a face first, then press E to extrude it.");
+	const faces = doc.selectedFaces.filter((f) => doc.pieces[f.pieceId]);
+	if (faces.length === 0) {
+		showNotice(
+			"Click a face first (Shift+click for more), then press E to extrude.",
+		);
 		return;
 	}
-	if (!extrudableDimension(piece, face)) {
-		showNotice(`That face can't be extruded: ${FIXED_REASON[piece.kind]}`);
+	const fixed = faces
+		.map((f) => doc.pieces[f.pieceId])
+		.find((piece, i) => !extrudableDimension(piece, faces[i]));
+	if (fixed) {
+		const which =
+			faces.length > 1 ? `${fixed.name} has a face that` : "That face";
+		showNotice(`${which} can't be extruded: ${FIXED_REASON[fixed.kind]}`);
 		return;
 	}
 	setExtrude({
-		face,
+		faces,
 		startParam: null,
 		distance: 0,
 		typed: "",
@@ -33,12 +39,12 @@ const FIXED_REASON: Record<PieceKind, string> = {
 	framing: "a framing piece's width and depth are fixed.",
 };
 
-/** Applies the extrude as one undoable step. The face stays selected for another extrude. */
+/** Applies the extrude as one undoable step. The faces stay selected for another extrude. */
 export function confirmExtrude() {
 	const { extrude, apply, setExtrude } = store();
 	if (!extrude) return;
 	setExtrude(null);
-	apply(commands.extrudeFace(extrude.face, effectiveDistance(extrude)));
+	apply(commands.extrudeFaces(extrude.faces, effectiveDistance(extrude)));
 }
 
 export function cancelExtrude() {

@@ -1,15 +1,15 @@
-import type { PointerEvent, WheelEvent } from "react";
-import { kindName } from "../model/naming";
-import type { PieceKind } from "../model/types";
-import { CREATE_OPTIONS, type Presets } from "../state/creator";
-import { useAppStore } from "../state/store";
+import { type PointerEvent, useMemo, type WheelEvent } from "react";
+import { kindName } from "@/model/naming";
+import { orderedStock, type Stock, stockLabel } from "@/model/stock";
+import type { PieceKind } from "@/model/types";
+import { useAppStore } from "@/state/store";
 import {
 	cancelCreator,
 	confirmCreate,
 	cycle,
 	highlight,
-	withTyped,
-} from "../tools/creatorSession";
+	resolveStock,
+} from "@/tools/creatorSession";
 
 const OUTER = 112;
 const INNER = 50;
@@ -17,9 +17,8 @@ const INNER = 50;
 const DEADZONE = 30;
 const EDGE = 12;
 
-/** Centre angle (degrees, 0 = right, counter-clockwise) of each slice. The first option sits on the left. */
-const sliceAngle = (i: number) => 180 - (i * 360) / CREATE_OPTIONS.length;
-const HALF_SPAN = 180 / CREATE_OPTIONS.length;
+/** Centre angle (degrees, 0 = right, counter-clockwise) of slice i of n. The first option sits on the left. */
+const sliceAngle = (i: number, n: number) => 180 - (i * 360) / n;
 
 /**
  * Weapon-wheel style chooser for new pieces. Opens at the cursor with the last-used kind preselected.
@@ -27,8 +26,13 @@ const HALF_SPAN = 180 / CREATE_OPTIONS.length;
  */
 export function CreateWheel() {
 	const creator = useAppStore((s) => s.creator);
-	const presets = useAppStore((s) => s.presets);
-	if (!creator) return null;
+	const stock = useAppStore((s) => s.doc.stock);
+	const options = useMemo(() => orderedStock(stock), [stock]);
+	if (!creator || options.length === 0) return null;
+	const n = options.length;
+	const halfSpan = 180 / n;
+	// What confirm would create right now (a typed size may pick or add a different stock).
+	const target = resolveStock();
 
 	const cx = clamp(
 		creator.at.x,
@@ -40,21 +44,20 @@ export function CreateWheel() {
 		OUTER + EDGE,
 		window.innerHeight - OUTER - EDGE,
 	);
-	const shown = withTyped(presets, creator.highlighted, creator.typed);
 
 	const onPointerMove = (e: PointerEvent) => {
 		const dx = e.clientX - cx;
 		const dy = e.clientY - cy;
 		if (Math.hypot(dx, dy) < DEADZONE) return;
 		const angle = (Math.atan2(-dy, dx) * 180) / Math.PI;
-		const nearest = CREATE_OPTIONS.reduce(
+		const nearest = options.reduce(
 			(best, _, i) =>
-				angleGap(angle, sliceAngle(i)) < angleGap(angle, sliceAngle(best))
+				angleGap(angle, sliceAngle(i, n)) < angleGap(angle, sliceAngle(best, n))
 					? i
 					: best,
 			0,
 		);
-		highlight(CREATE_OPTIONS[nearest]);
+		highlight(options[nearest].id);
 	};
 
 	const onPointerDown = (e: PointerEvent) => {
@@ -92,12 +95,15 @@ export function CreateWheel() {
 					className="drop-shadow-xl"
 					aria-hidden
 				>
-					{CREATE_OPTIONS.map((kind, i) => (
+					{options.map((s, i) => (
 						<path
-							key={kind}
-							d={sector(sliceAngle(i) - HALF_SPAN, sliceAngle(i) + HALF_SPAN)}
+							key={s.id}
+							d={sector(
+								sliceAngle(i, n) - halfSpan,
+								sliceAngle(i, n) + halfSpan,
+							)}
 							className={`transition-colors duration-100 ${
-								kind === creator.highlighted
+								s.id === creator.highlighted
 									? "fill-blue-500/90"
 									: "fill-neutral-900/75"
 							} stroke-white/15`}
@@ -111,28 +117,28 @@ export function CreateWheel() {
 					/>
 				</svg>
 
-				{CREATE_OPTIONS.map((kind, i) => (
+				{options.map((s, i) => (
 					<Option
-						key={kind}
-						kind={kind}
-						index={i}
-						presets={kind === creator.highlighted ? shown : presets}
-						active={kind === creator.highlighted}
+						key={s.id}
+						stock={s}
+						angle={sliceAngle(i, n)}
+						active={s.id === creator.highlighted}
 					/>
 				))}
 
 				<div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center text-white">
 					<span className="text-[11px] font-semibold uppercase tracking-wide">
-						{kindName(creator.highlighted)}
+						{target ? kindName(target.kind) : ""}
 					</span>
 					<span className="text-[10px] tabular-nums text-white/70">
 						{creator.typed ? (
 							<>
 								{creator.typed}
 								<span className="animate-pulse">▏</span>
+								{target && !stock[target.id] && " (new)"}
 							</>
 						) : (
-							sizeLabel(creator.highlighted, presets)
+							target && stockLabel(target)
 						)}
 					</span>
 				</div>
@@ -149,17 +155,12 @@ export function CreateWheel() {
 	);
 }
 
-type OptionProps = {
-	kind: PieceKind;
-	index: number;
-	presets: Presets;
-	active: boolean;
-};
+type OptionProps = { stock: Stock; angle: number; active: boolean };
 
-/** Icon, name and size of one option, placed in the middle of its slice. */
-function Option({ kind, index, presets, active }: OptionProps) {
+/** Icon, name and size of one stock option, placed in the middle of its slice. */
+function Option({ stock, angle, active }: OptionProps) {
 	const r = (OUTER + INNER) / 2;
-	const a = (sliceAngle(index) * Math.PI) / 180;
+	const a = (angle * Math.PI) / 180;
 	return (
 		<div
 			className={`pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-0.5 text-center transition-transform duration-100 ${
@@ -167,10 +168,10 @@ function Option({ kind, index, presets, active }: OptionProps) {
 			}`}
 			style={{ left: OUTER + r * Math.cos(a), top: OUTER - r * Math.sin(a) }}
 		>
-			<KindIcon kind={kind} />
-			<span className="text-[11px] font-semibold">{kindName(kind)}</span>
+			<KindIcon kind={stock.kind} />
+			<span className="text-[11px] font-semibold">{kindName(stock.kind)}</span>
 			<span className="text-[10px] tabular-nums opacity-80">
-				{sizeLabel(kind, presets)}
+				{stockLabel(stock)}
 			</span>
 		</div>
 	);
@@ -195,13 +196,11 @@ function KindIcon({ kind }: { kind: PieceKind }) {
 	);
 }
 
-const sizeLabel = (kind: PieceKind, p: Presets) =>
-	kind === "sheet"
-		? `${p.sheet.thickness} mm`
-		: `${p.framing.width} × ${p.framing.depth}`;
-
 /** SVG path for a ring slice between two angles (degrees, counter-clockwise from +X, screen Y down). */
 function sector(from: number, to: number): string {
+	// A single option fills the whole ring: an SVG arc can't start and end at the same point, so split it.
+	if (to - from >= 360)
+		return `${sector(from, from + 180)} ${sector(from + 180, to)}`;
 	const point = (radius: number, deg: number) => {
 		const a = (deg * Math.PI) / 180;
 		return `${radius * Math.cos(a)} ${-radius * Math.sin(a)}`;

@@ -1,11 +1,10 @@
 import { create } from "zustand";
-import { CONFIG } from "../config";
-import type { PieceKind } from "../model/types";
-import type { CreatorState, Presets } from "./creator";
-import { type Command, type DocumentState, emptyDocument } from "./document";
-import type { DragState } from "./drag";
-import type { ExtrudeState } from "./extrude";
-import * as history from "./history";
+import type { Id } from "@/model/types";
+import type { CreatorState } from "@/state/creator";
+import { type Command, type DocumentState, emptyDocument } from "@/state/document";
+import type { DragState } from "@/state/drag";
+import type { ExtrudeState } from "@/state/extrude";
+import * as history from "@/state/history";
 
 /** The active tool decides whether the selection shows the move/rotate gizmo. */
 export type Tool = "select" | "move";
@@ -20,9 +19,8 @@ type AppState = {
 	tool: Tool;
 	/** The create wheel, when open. */
 	creator: CreatorState | null;
-	/** Sizes new pieces are created with, and which kind was created last (preselected next time). */
-	presets: Presets;
-	lastCreated: PieceKind;
+	/** The stock entry used for the last new piece (preselected in the wheel next time). */
+	lastCreated: Id | null;
 
 	/** Runs a command and records an undo step if the document changed. */
 	apply: (command: Command) => void;
@@ -34,8 +32,7 @@ type AppState = {
 	clearNotice: () => void;
 	setTool: (tool: Tool) => void;
 	setCreator: (creator: CreatorState | null) => void;
-	setPresets: (presets: Presets) => void;
-	setLastCreated: (kind: PieceKind) => void;
+	setLastCreated: (stockId: Id) => void;
 };
 
 export const useAppStore = create<AppState>()((set, get) => ({
@@ -46,14 +43,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	notice: null,
 	tool: "move",
 	creator: null,
-	presets: {
-		sheet: { thickness: CONFIG.defaults.sheet.thickness },
-		framing: {
-			width: CONFIG.defaults.framing.width,
-			depth: CONFIG.defaults.framing.depth,
-		},
-	},
-	lastCreated: "sheet",
+	lastCreated: null,
 
 	apply: (command) => {
 		const { doc } = get();
@@ -75,7 +65,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	clearNotice: () => set({ notice: null }),
 	setTool: (tool) => set({ tool, drag: null }),
 	setCreator: (creator) => set({ creator }),
-	setPresets: (presets) => set({ presets }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
 }));
 

@@ -1,11 +1,13 @@
 const HINTS = [
 	["Click", "select face"],
+	["⇧ Click", "add/remove piece or face"],
 	["Double-click", "select object"],
+	["⌘A", "select all"],
 	["Right-drag", "orbit"],
 	["Middle-drag / ⇧ right-drag", "pan"],
 	["Wheel", "zoom"],
-	["Shift + drag", "1 mm / 15° steps"],
-	["Alt + move", "duplicate"],
+	["Shift + drag", "1 mm / 5° steps"],
+	["Alt + move/rotate", "duplicate"],
 	["E", "extrude face (type mm, Enter)"],
 	["Esc", "deselect / cancel"],
 ] as const;

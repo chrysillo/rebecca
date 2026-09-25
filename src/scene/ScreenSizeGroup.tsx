@@ -1,7 +1,7 @@
 import { useFrame } from "@react-three/fiber";
 import { type ReactNode, useRef } from "react";
 import type { Group } from "three";
-import type { Vec3 } from "../geometry/vec";
+import type { Vec3 } from "@/geometry/vec";
 
 /** Size as a fraction of camera distance, so gizmos look the same size at any zoom. */
 const SCREEN_SCALE = 0.14;

@@ -1,4 +1,4 @@
-import { add, dot, scale, sub, type Vec3 } from "./vec";
+import { add, dot, scale, sub, type Vec3 } from "@/geometry/vec";
 
 export type Ray = { origin: Vec3; direction: Vec3 };
 

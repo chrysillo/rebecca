@@ -1,14 +1,14 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useRef } from "react";
-import { intersectPlane } from "../geometry/rays";
-import { type Axis, axisVector, type Vec3 } from "../geometry/vec";
-import { isHeld } from "../input/modifiers";
-import type { Piece } from "../model/types";
-import { centreOf, selectedPieces } from "../state/selectors";
-import { useAppStore } from "../state/store";
-import { commitDrag } from "../tools/commitDrag";
-import { angleAround, computeRotation } from "../tools/rotateTool";
-import { toRay, useGizmoPointer } from "./useGizmoPointer";
+import { intersectPlane } from "@/geometry/rays";
+import { type Axis, axisVector, type Vec3 } from "@/geometry/vec";
+import { isHeld } from "@/input/modifiers";
+import type { Piece } from "@/model/types";
+import { toRay, useGizmoPointer } from "@/scene/useGizmoPointer";
+import { selectedPieces, selectionPivot } from "@/state/selectors";
+import { useAppStore } from "@/state/store";
+import { commitDrag } from "@/tools/commitDrag";
+import { angleAround, computeRotation } from "@/tools/rotateTool";
 
 type Session = {
 	axis: Axis;
@@ -38,7 +38,7 @@ export function useRotateDrag() {
 		if (e.button !== 0) return;
 		const { doc, setDrag } = useAppStore.getState();
 		const pieces = selectedPieces(doc);
-		const pivot = centreOf(pieces);
+		const pivot = selectionPivot(pieces, doc.groupPivot);
 		const angle = pointerAngle(e, axis, pivot);
 		if (angle === null) return;
 		pointer.capture(e);
@@ -58,7 +58,8 @@ export function useRotateDrag() {
 					{ position: p.position, rotation: p.rotation },
 				]),
 			),
-			duplicate: false,
+			// Alt (the duplicate modifier) rotates a copy, leaving the original where it is.
+			duplicate: isHeld("duplicate", e),
 			snapTarget: null,
 			rotation: { axis, startAngle: angle, degrees: 0 },
 		});

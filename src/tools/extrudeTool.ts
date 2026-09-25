@@ -1,13 +1,13 @@
-import { CONFIG } from "../config";
+import { CONFIG } from "@/config";
 import {
 	type FacePlane,
 	type FaceRef,
 	faceNormal,
 	pieceFacePlanes,
 	sameFace,
-} from "../geometry/box";
-import type { Piece } from "../model/types";
-import { snapTranslation } from "../snapping/snapTranslation";
+} from "@/geometry/box";
+import type { Piece } from "@/model/types";
+import { snapTranslation } from "@/snapping/snapTranslation";
 
 export type ExtrudeInput = {
 	piece: Piece;

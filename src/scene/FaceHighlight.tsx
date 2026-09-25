@@ -1,29 +1,37 @@
 import { Line } from "@react-three/drei";
 import { useMemo } from "react";
 import { BufferGeometry, Float32BufferAttribute } from "three";
-import { faceCorners } from "../geometry/box";
-import { shownPiece } from "../state/selectors";
-import { useAppStore } from "../state/store";
+import { type FaceRef, faceCorners } from "@/geometry/box";
+import type { Piece } from "@/model/types";
+import { extrudePreview } from "@/state/selectors";
+import { useAppStore } from "@/state/store";
 
 const FACE_COLOR = "#3b82f6";
 
-/** Tints and outlines the selected face (following it while it is extruded). */
+/** Tints and outlines every selected face (following them while they are extruded). */
 export function FaceHighlight() {
 	const doc = useAppStore((s) => s.doc);
 	const extrude = useAppStore((s) => s.extrude);
-	const face = doc.selectedFace;
-	// While extruding, the highlight rides on the moving face.
-	const piece = useMemo(
-		() => (face ? shownPiece(doc, extrude, face.pieceId) : undefined),
-		[doc, extrude, face],
-	);
+	const preview = useMemo(() => extrudePreview(doc, extrude), [doc, extrude]);
 
+	return doc.selectedFaces.map((face) => {
+		const piece = preview[face.pieceId] ?? doc.pieces[face.pieceId];
+		return piece ? (
+			<SelectedFace
+				key={`${face.pieceId}:${face.axis}${face.sign}`}
+				piece={piece}
+				face={face}
+			/>
+		) : null;
+	});
+}
+
+function SelectedFace({ piece, face }: { piece: Piece; face: FaceRef }) {
 	const corners = useMemo(
-		() => (face && piece ? faceCorners(piece, face.axis, face.sign) : null),
-		[face, piece],
+		() => faceCorners(piece, face.axis, face.sign),
+		[piece, face],
 	);
 	const geometry = useMemo(() => {
-		if (!corners) return null;
 		const [a, b, c, d] = corners;
 		const g = new BufferGeometry();
 		// Two triangles, both windings, so the tint shows from either side.
@@ -38,7 +46,6 @@ export function FaceHighlight() {
 		return g;
 	}, [corners]);
 
-	if (!corners || !geometry) return null;
 	const outline = [...corners, corners[0]].map(
 		(p): [number, number, number] => [p.x, p.y, p.z],
 	);

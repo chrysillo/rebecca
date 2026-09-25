@@ -1,5 +1,5 @@
-import type { FacePlane, Plane } from "../geometry/box";
-import { dot, type Vec3 } from "../geometry/vec";
+import type { FacePlane, Plane } from "@/geometry/box";
+import { dot, type Vec3 } from "@/geometry/vec";
 
 const PARALLEL = 1 - 1e-6;
 const MIN_ALONG = 1e-6;

@@ -1,7 +1,7 @@
 import { Euler, Matrix4, Quaternion, Vector3 } from "three";
-import { pieceSize } from "../model/dimensions";
-import type { Id, Piece, Rotation } from "../model/types";
-import { AXES, type Axis, add, dot, scale, type Vec3 } from "./vec";
+import { AXES, type Axis, add, dot, scale, type Vec3 } from "@/geometry/vec";
+import { pieceSize } from "@/model/dimensions";
+import type { Id, Piece, Rotation } from "@/model/types";
 
 /** An infinite plane: every point p on it satisfies dot(normal, p) === offset. */
 export type Plane = { normal: Vec3; offset: number };

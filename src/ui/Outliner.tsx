@@ -1,13 +1,13 @@
 import { useState } from "react";
-import { commands } from "../commands";
-import { dimensionEntries } from "../model/dimensions";
-import { kindName } from "../model/naming";
-import type { Id, Piece } from "../model/types";
-import { applyCommand, useAppStore } from "../state/store";
-import { RenameField } from "./components/RenameField";
-import { Panel } from "./Panel";
+import { commands } from "@/commands";
+import { dimensionEntries } from "@/model/dimensions";
+import { kindName } from "@/model/naming";
+import type { Id, Piece } from "@/model/types";
+import { applyCommand, useAppStore } from "@/state/store";
+import { RenameField } from "@/ui/components/RenameField";
+import { Panel } from "@/ui/Panel";
 
-/** Left-hand list of every piece in the project. Click to select; double-click the name to rename. */
+/** Left-hand list of every piece in the project. Click to select (Shift/⌘-click to add); double-click the name to rename. */
 export function Outliner() {
 	const pieces = useAppStore((s) => s.doc.pieces);
 	const selection = useAppStore((s) => s.doc.selection);
@@ -73,9 +73,15 @@ function Row({ piece, selected, renaming, onRename, onRenameDone }: RowProps) {
 				<button
 					type="button"
 					className="flex min-w-0 flex-1 items-baseline justify-between gap-2 text-left"
-					onClick={() => applyCommand(commands.selectPieces([piece.id]))}
+					onClick={(e) =>
+						applyCommand(
+							e.shiftKey || e.metaKey || e.ctrlKey
+								? commands.togglePiece(piece.id)
+								: commands.selectPieces([piece.id]),
+						)
+					}
 					onDoubleClick={onRename}
-					title="Click to select, double-click to rename"
+					title="Click to select (Shift/⌘ to add), double-click to rename"
 				>
 					<span className="truncate">{piece.name}</span>
 					<span className="shrink-0 text-[10px] tabular-nums text-neutral-400">

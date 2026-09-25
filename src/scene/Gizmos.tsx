@@ -1,40 +1,67 @@
-import { centreOf, selectedPiecesPreviewed } from "../state/selectors";
-import { useAppStore } from "../state/store";
-import { GIZMO_RENDER_ORDER, gizmoMaterialProps } from "./gizmoStyle";
-import { MoveArrows } from "./MoveArrows";
-import { RotateArcs } from "./RotateArcs";
-import { RotationReadout } from "./RotationReadout";
-import { ScreenSizeGroup } from "./ScreenSizeGroup";
+import { useState } from "react";
+import { commands } from "@/commands";
+import type { Pivot } from "@/model/types";
+import { MoveArrows } from "@/scene/MoveArrows";
+import { PivotHandle, PivotTargets } from "@/scene/PivotHandle";
+import { RotateArcs } from "@/scene/RotateArcs";
+import { RotationReadout } from "@/scene/RotationReadout";
+import { ScreenSizeGroup } from "@/scene/ScreenSizeGroup";
+import { useCameraView } from "@/scene/useCameraView";
+import {
+	activePivot,
+	selectedPiecesPreviewed,
+	selectionPivot,
+} from "@/state/selectors";
+import { applyCommand, useAppStore } from "@/state/store";
 
 /**
- * With the Move tool, the selection gets one gizmo: arrows to move along an axis
- * and curved arcs to rotate about it. It sits at the selection centre and follows any drag preview.
+ * With the Move tool, the selection gets one gizmo: arrows to move along an axis and curved arcs
+ * to rotate about it. It sits at the pivot and follows any drag preview. Dragging the white centre
+ * dot moves the pivot: a single piece's own, or the group pivot when several pieces are selected.
  */
 export function Gizmos() {
 	const tool = useAppStore((s) => s.tool);
 	const doc = useAppStore((s) => s.doc);
 	const drag = useAppStore((s) => s.drag);
+	// While the pivot dot is being dragged: the pivot it's currently snapped to.
+	const [pivotPreview, setPivotPreview] = useState<Pivot | null>(null);
 
 	const pieces = selectedPiecesPreviewed(doc, drag);
-	if (tool !== "move" || pieces.length === 0) return null;
-	const origin = centreOf(pieces);
+	const shown = tool === "move" && pieces.length > 0;
+	const origin = shown
+		? selectionPivot(pieces, doc.groupPivot, pivotPreview)
+		: null;
+	// Which side of the gizmo the camera is on, so handles face the viewer (Shapr3D style).
+	const view = useCameraView(origin);
+	if (!shown || !origin) return null;
+	const current = activePivot(pieces, doc.groupPivot);
+
+	const commitPivot = (pivot: Pivot) =>
+		applyCommand(
+			pieces.length === 1
+				? commands.setPivot(pieces[0].id, pivot)
+				: commands.setGroupPivot(pivot),
+		);
 
 	return (
-		<ScreenSizeGroup position={origin}>
-			<MoveArrows origin={origin} />
-			<RotateArcs origin={origin} />
-			<RotationReadout />
-			<CentreDot />
-		</ScreenSizeGroup>
-	);
-}
-
-/** Small neutral dot marking the pivot. */
-function CentreDot() {
-	return (
-		<mesh renderOrder={GIZMO_RENDER_ORDER}>
-			<sphereGeometry args={[0.03, 16, 12]} />
-			<meshBasicMaterial {...gizmoMaterialProps("#ffffff")} />
-		</mesh>
+		<>
+			{pivotPreview && <PivotTargets pieces={pieces} active={pivotPreview} />}
+			<ScreenSizeGroup position={origin}>
+				{/* Arrows and arcs step aside while the pivot is being placed. */}
+				{!pivotPreview && (
+					<>
+						<MoveArrows origin={origin} view={view} />
+						<RotateArcs view={view} />
+						<RotationReadout />
+					</>
+				)}
+				<PivotHandle
+					pieces={pieces}
+					current={current}
+					onPreview={setPivotPreview}
+					onCommit={commitPivot}
+				/>
+			</ScreenSizeGroup>
+		</>
 	);
 }

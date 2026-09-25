@@ -7,8 +7,8 @@ import {
 	Quaternion,
 	Vector3,
 } from "three";
-import { piecesAabb } from "../geometry/box";
-import { useAppStore } from "../state/store";
+import { piecesAabb } from "@/geometry/box";
+import { useAppStore } from "@/state/store";
 
 type OrbitLike = { target: Vector3; enabled: boolean; update: () => void };
 

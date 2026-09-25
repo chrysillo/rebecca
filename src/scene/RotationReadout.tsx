@@ -1,11 +1,11 @@
 import { Html } from "@react-three/drei";
 import { DoubleSide } from "three";
-import { useAppStore } from "../state/store";
 import {
 	AXIS_COLOR,
 	GIZMO_RENDER_ORDER,
 	PLANE_ORIENTATION,
-} from "./gizmoStyle";
+} from "@/scene/gizmoStyle";
+import { useAppStore } from "@/state/store";
 
 const DEG = Math.PI / 180;
 const WEDGE_RADIUS = 0.75;

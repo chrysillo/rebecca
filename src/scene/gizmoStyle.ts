@@ -1,5 +1,5 @@
 import { Euler, Matrix4, Vector3 } from "three";
-import type { Axis } from "../geometry/vec";
+import type { Axis } from "@/geometry/vec";
 
 /** Softer axis colours, Shapr3D style. */
 export const AXIS_COLOR: Record<Axis, string> = {
@@ -9,8 +9,17 @@ export const AXIS_COLOR: Record<Axis, string> = {
 };
 export const HOVER_COLOR = "#ffb224";
 
+/** Radius (gizmo units; move arrows are 1 long) of the rotate handles and their guide circle. */
+export const ROTATE_RADIUS = 0.85;
+
 /** Drawn after the scene and without depth testing, so gizmos are never hidden by pieces. */
 export const GIZMO_RENDER_ORDER = 1000;
+
+/**
+ * Radius of the invisible grab areas around arrows and arcs (gizmo units, ~13 px on screen).
+ * Generous, so a slightly-off press still grabs the handle instead of clicking the piece behind it.
+ */
+export const HANDLE_HIT_RADIUS = 0.1;
 
 /** Tag put on gizmo hit areas so clicks that land on a handle don't also select what's behind it. */
 export const GIZMO_USER_DATA = { gizmo: true } as const;
@@ -19,8 +28,19 @@ export const isGizmoObject = (o: { userData: Record<string, unknown> }) =>
 	o.userData.gizmo === true;
 
 /** Unlit, always-on-top material props shared by every visible gizmo part. */
+/**
+ * Material props for every visible gizmo part. Transparent (even though fully opaque) so three.js
+ * draws it in the transparent pass, after the grid, piece outlines and face tints; with no depth
+ * test and a high render order it then always ends up on top.
+ */
 export const gizmoMaterialProps = (color: string) =>
-	({ color, depthTest: false, depthWrite: false, toneMapped: false }) as const;
+	({
+		color,
+		transparent: true,
+		depthTest: false,
+		depthWrite: false,
+		toneMapped: false,
+	}) as const;
 
 /**
  * Orientation that lays a shape drawn in its local XY plane (arcs, the angle wedge) into the plane around each world axis,

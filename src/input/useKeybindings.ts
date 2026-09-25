@@ -1,8 +1,8 @@
 import { useEffect } from "react";
-import { handleCreatorKey, handleCreatorKeyUp } from "../tools/creatorSession";
-import { handleExtrudeKey } from "../tools/extrudeSession";
-import { ACTIONS } from "./actions";
-import { actionFor } from "./keymap";
+import { ACTIONS } from "@/input/actions";
+import { actionFor } from "@/input/keymap";
+import { handleCreatorKey, handleCreatorKeyUp } from "@/tools/creatorSession";
+import { handleExtrudeKey } from "@/tools/extrudeSession";
 
 const isTextEntry = (target: EventTarget | null) =>
 	target instanceof HTMLElement &&

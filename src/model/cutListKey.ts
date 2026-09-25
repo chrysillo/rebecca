@@ -1,4 +1,4 @@
-import type { Piece } from "./types";
+import type { Piece } from "@/model/types";
 
 /**
  * Pieces with the same key are identical cuts, regardless of position or rotation.

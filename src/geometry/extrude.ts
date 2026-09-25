@@ -1,8 +1,8 @@
-import { dimensionAlong, isEditableDimension } from "../model/dimensions";
-import type { Piece } from "../model/types";
-import { type FaceRef, faceNormal } from "./box";
-import { clampToFloor, lowestZ } from "./floor";
-import { add, roundMm, roundVec, scale } from "./vec";
+import { type FaceRef, faceNormal } from "@/geometry/box";
+import { clampToFloor, lowestZ } from "@/geometry/floor";
+import { add, roundMm, roundVec, scale } from "@/geometry/vec";
+import { dimensionAlong, isEditableDimension } from "@/model/dimensions";
+import type { Id, Piece } from "@/model/types";
 
 /** Extruding can shrink a piece, but never below this. */
 const MIN_DIMENSION = 1;
@@ -46,4 +46,24 @@ export function extrudePiece(
 	if (below > 1e-9 && normal.z < -1e-9)
 		result = build(distance - below / -normal.z);
 	return clampToFloor(result);
+}
+
+/**
+ * Extrudes several faces by the same distance (each along its own normal), possibly several
+ * on one piece (e.g. both ends of a rail). Returns just the changed pieces, or null if any face is fixed.
+ */
+export function extrudeAll(
+	pieces: Record<Id, Piece>,
+	faces: FaceRef[],
+	distance: number,
+): Record<Id, Piece> | null {
+	const changed: Record<Id, Piece> = {};
+	for (const face of faces) {
+		const piece = changed[face.pieceId] ?? pieces[face.pieceId];
+		if (!piece) continue;
+		const next = extrudePiece(piece, face, distance);
+		if (!next) return null;
+		changed[face.pieceId] = next;
+	}
+	return changed;
 }

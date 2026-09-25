@@ -1,5 +1,5 @@
-import type { Axis, Vec3 } from "../geometry/vec";
-import type { Framing, Piece, PieceKind, Sheet } from "./types";
+import type { Axis, Vec3 } from "@/geometry/vec";
+import type { Framing, Piece, PieceKind, Sheet } from "@/model/types";
 
 type SheetDimension = "length" | "width" | "thickness";
 type FramingDimension = "length" | "width" | "depth";

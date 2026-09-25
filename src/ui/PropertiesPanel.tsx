@@ -1,13 +1,14 @@
-import { commands } from "../commands";
-import { type FaceRef, faceNormal, pieceAabb } from "../geometry/box";
-import { AXES } from "../geometry/vec";
-import { dimensionEntries, pieceSize } from "../model/dimensions";
-import { kindName } from "../model/naming";
-import type { Piece } from "../model/types";
-import { selectedPieces } from "../state/selectors";
-import { applyCommand, useAppStore } from "../state/store";
-import { NumberField } from "./components/NumberField";
-import { Group, Panel } from "./Panel";
+import { commands } from "@/commands";
+import { type FaceRef, faceNormal } from "@/geometry/box";
+import { AXES } from "@/geometry/vec";
+import { dimensionEntries, pieceSize } from "@/model/dimensions";
+import { kindName } from "@/model/naming";
+import { stockLabel, stockOfKind } from "@/model/stock";
+import type { Piece } from "@/model/types";
+import { selectedPieces } from "@/state/selectors";
+import { applyCommand, useAppStore } from "@/state/store";
+import { NumberField } from "@/ui/components/NumberField";
+import { Group, Panel } from "@/ui/Panel";
 
 const DIMENSION_LABEL: Record<string, string> = {
 	length: "Length",
@@ -20,14 +21,28 @@ const DIMENSION_LABEL: Record<string, string> = {
 export function PropertiesPanel() {
 	const doc = useAppStore((s) => s.doc);
 	const selected = selectedPieces(doc);
-	const face = doc.selectedFace;
-	const facePiece = face ? doc.pieces[face.pieceId] : undefined;
+	const faces = doc.selectedFaces.filter((f) => doc.pieces[f.pieceId]);
 
-	if (face && facePiece)
-		return <FaceProperties face={face} piece={facePiece} />;
+	if (faces.length > 1) return <FacesSummary faces={faces} />;
+	if (faces.length === 1)
+		return (
+			<FaceProperties face={faces[0]} piece={doc.pieces[faces[0].pieceId]} />
+		);
 	if (selected.length === 0) return null;
 	if (selected.length > 1)
-		return <Panel title="Selection">{selected.length} pieces selected</Panel>;
+		return (
+			<Panel title={`${selected.length} pieces`}>
+				<ul className="-mt-1 flex flex-col gap-0.5 text-xs text-neutral-700">
+					{selected.map((p) => (
+						<li key={p.id}>{p.name}</li>
+					))}
+				</ul>
+				<p className="text-[11px] text-neutral-400">
+					Move and rotate them together. Drag the white dot to change the group
+					pivot.
+				</p>
+			</Panel>
+		);
 	return <PieceProperties piece={selected[0]} />;
 }
 
@@ -41,14 +56,38 @@ const FACING: Record<string, string> = {
 	"z-": "Bottom",
 };
 
-function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
-	const size = pieceSize(piece);
-	const [u, v] = AXES.filter((a) => a !== face.axis);
+/** Closest world direction a face points, e.g. "Top" or "Left". */
+function facingName(piece: Piece, face: FaceRef): string {
 	const n = faceNormal(piece, face.axis, face.sign);
 	const main = AXES.reduce((best, a) =>
 		Math.abs(n[a]) > Math.abs(n[best]) ? a : best,
 	);
-	const facing = FACING[`${main}${n[main] < 0 ? "-" : "+"}`];
+	return FACING[`${main}${n[main] < 0 ? "-" : "+"}`];
+}
+
+/** Several faces selected (Shift+click): list them; E extrudes them together. */
+function FacesSummary({ faces }: { faces: FaceRef[] }) {
+	const pieces = useAppStore((s) => s.doc.pieces);
+	return (
+		<Panel title={`${faces.length} faces`}>
+			<ul className="-mt-1 flex flex-col gap-0.5 text-xs text-neutral-700">
+				{faces.map((f) => (
+					<li key={`${f.pieceId}:${f.axis}${f.sign}`}>
+						{pieces[f.pieceId].name} · {facingName(pieces[f.pieceId], f)}
+					</li>
+				))}
+			</ul>
+			<p className="text-[11px] text-neutral-400">
+				Press E to extrude them together.
+			</p>
+		</Panel>
+	);
+}
+
+function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
+	const size = pieceSize(piece);
+	const [u, v] = AXES.filter((a) => a !== face.axis);
+	const facing = facingName(piece, face);
 
 	return (
 		<Panel title="Face">
@@ -75,13 +114,27 @@ function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
 }
 
 function PieceProperties({ piece }: { piece: Piece }) {
-	const corner = pieceAabb(piece).min;
-
+	const stock = useAppStore((s) => s.doc.stock);
 	return (
 		<Panel title={piece.name}>
 			<p className="-mt-2 text-[11px] text-neutral-400">
 				{kindName(piece.kind)}
 			</p>
+			<Group title="Stock">
+				<select
+					className="rounded border border-neutral-300 bg-white px-1.5 py-1 text-xs focus:border-amber-500 focus:outline-none"
+					value={piece.stockId}
+					onChange={(e) =>
+						applyCommand(commands.setPieceStock(piece.id, e.target.value))
+					}
+				>
+					{stockOfKind(stock, piece.kind).map((s) => (
+						<option key={s.id} value={s.id}>
+							{kindName(s.kind)} {stockLabel(s)}
+						</option>
+					))}
+				</select>
+			</Group>
 			<Group title="Dimensions">
 				{dimensionEntries(piece).map((d) => (
 					<NumberField
@@ -94,37 +147,6 @@ function PieceProperties({ piece }: { piece: Piece }) {
 							d.editable
 								? (v) => applyCommand(commands.setDimension(piece.id, d.key, v))
 								: undefined
-						}
-					/>
-				))}
-			</Group>
-			<Group title="Position (min corner)">
-				{AXES.map((axis) => (
-					<NumberField
-						key={axis}
-						label={axis.toUpperCase()}
-						value={corner[axis]}
-						unit="mm"
-						onCommit={(v) =>
-							applyCommand(commands.setCornerCoordinate(piece.id, axis, v))
-						}
-					/>
-				))}
-			</Group>
-			<Group title="Rotation">
-				{AXES.map((axis) => (
-					<NumberField
-						key={axis}
-						label={axis.toUpperCase()}
-						value={piece.rotation[axis]}
-						unit="°"
-						onCommit={(v) =>
-							applyCommand(
-								commands.setRotation(piece.id, {
-									...piece.rotation,
-									[axis]: v,
-								}),
-							)
 						}
 					/>
 				))}

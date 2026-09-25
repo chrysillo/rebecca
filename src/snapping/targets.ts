@@ -1,5 +1,5 @@
-import { type FacePlane, pieceFacePlanes } from "../geometry/box";
-import type { Id, Piece } from "../model/types";
+import { type FacePlane, pieceFacePlanes } from "@/geometry/box";
+import type { Id, Piece } from "@/model/types";
 
 /** The floor plane, always available as a snap target. */
 export const FLOOR_PLANE: FacePlane = {

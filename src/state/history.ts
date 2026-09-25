@@ -1,4 +1,4 @@
-import type { DocumentState } from "./document";
+import type { DocumentState } from "@/state/document";
 
 /** Snapshot undo/redo. Documents are small, so whole-state snapshots are the simplest correct approach. */
 export type History = { past: DocumentState[]; future: DocumentState[] };

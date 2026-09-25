@@ -1,16 +1,17 @@
 import { OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { MOUSE, Object3D } from "three";
-import { commands } from "../commands";
-import { applyCommand } from "../state/store";
-import { ExtrudeController } from "./ExtrudeController";
-import { ExtrudeReadout } from "./ExtrudeReadout";
-import { FaceHighlight } from "./FaceHighlight";
-import { Floor } from "./Floor";
-import { Gizmos } from "./Gizmos";
-import { Pieces } from "./Pieces";
-import { SnapGuide } from "./SnapGuide";
-import { ViewCube } from "./ViewCube";
+import { commands } from "@/commands";
+import { ExtrudeController } from "@/scene/ExtrudeController";
+import { ExtrudeReadout } from "@/scene/ExtrudeReadout";
+import { FaceHighlight } from "@/scene/FaceHighlight";
+import { Floor } from "@/scene/Floor";
+import { Gizmos } from "@/scene/Gizmos";
+import { gizmoFirstEvents } from "@/scene/gizmoEvents";
+import { Pieces } from "@/scene/Pieces";
+import { SnapGuide } from "@/scene/SnapGuide";
+import { ViewCube } from "@/scene/ViewCube";
+import { applyCommand } from "@/state/store";
 
 // The model is Z-up (floor at Z = 0). Make three.js agree so no axis swapping is needed.
 Object3D.DEFAULT_UP.set(0, 0, 1);
@@ -29,6 +30,7 @@ const MOUSE_BUTTONS = {
 export function Viewport() {
 	return (
 		<Canvas
+			events={gizmoFirstEvents}
 			camera={{
 				position: [2400, -3200, 2200],
 				up: [0, 0, 1],

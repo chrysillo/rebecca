@@ -1,10 +1,11 @@
-import { piecesAabb } from "../geometry/box";
-import { extrudePiece } from "../geometry/extrude";
-import { add, scale, type Vec3 } from "../geometry/vec";
-import type { Id, Piece } from "../model/types";
-import type { DocumentState } from "./document";
-import type { DragState } from "./drag";
-import { type ExtrudeState, effectiveDistance } from "./extrude";
+import { piecesAabb } from "@/geometry/box";
+import { extrudeAll } from "@/geometry/extrude";
+import { selectionPivotPoint } from "@/geometry/pivot";
+import { add, scale, type Vec3 } from "@/geometry/vec";
+import type { Id, Piece, Pivot } from "@/model/types";
+import type { DocumentState } from "@/state/document";
+import type { DragState } from "@/state/drag";
+import { type ExtrudeState, effectiveDistance } from "@/state/extrude";
 
 export const selectedPieces = (doc: DocumentState): Piece[] =>
 	doc.selection.flatMap((id) => doc.pieces[id] ?? []);
@@ -19,30 +20,37 @@ export const selectedPiecesPreviewed = (
 		return preview ? { ...p, ...preview } : p;
 	});
 
+/** The pivot currently in use: a single piece's own, or the group pivot for several. */
+export const activePivot = (pieces: Piece[], groupPivot: Pivot): Pivot =>
+	pieces.length === 1 ? pieces[0].pivot : groupPivot;
+
+/** Where the gizmo sits and rotation turns (`override` while the pivot dot is being dragged). */
+export function selectionPivot(
+	pieces: Piece[],
+	groupPivot: Pivot,
+	override?: Pivot | null,
+): Vec3 {
+	return selectionPivotPoint(
+		pieces,
+		override ?? activePivot(pieces, groupPivot),
+	);
+}
+
 /** Centre of the bounding box around some pieces. */
 export function centreOf(pieces: Piece[]): Vec3 {
 	const box = piecesAabb(pieces);
 	return scale(add(box.min, box.max), 0.5);
 }
 
-/** The piece being extruded, as it would be if the extrude were confirmed now. */
+/** The pieces being extruded, as they would be if the extrude were confirmed now (by id). */
 export function extrudePreview(
 	doc: DocumentState,
 	extrude: ExtrudeState | null,
-): Piece | null {
-	const piece = extrude ? doc.pieces[extrude.face.pieceId] : undefined;
-	if (!extrude || !piece) return null;
-	return extrudePiece(piece, extrude.face, effectiveDistance(extrude));
-}
-
-/** A piece as currently shown: its extrude preview if it's being extruded, else the document version. */
-export function shownPiece(
-	doc: DocumentState,
-	extrude: ExtrudeState | null,
-	id: Id,
-): Piece | undefined {
-	const preview = extrudePreview(doc, extrude);
-	return preview?.id === id ? preview : doc.pieces[id];
+): Record<Id, Piece> {
+	if (!extrude) return {};
+	return (
+		extrudeAll(doc.pieces, extrude.faces, effectiveDistance(extrude)) ?? {}
+	);
 }
 
 export type DisplayPiece = { piece: Piece; selected: boolean; ghost: boolean };
@@ -60,7 +68,7 @@ export function displayPieces(
 	const extruded = extrudePreview(doc, extrude);
 	const result: DisplayPiece[] = [];
 	for (const original of Object.values(doc.pieces)) {
-		const piece = extruded?.id === original.id ? extruded : original;
+		const piece = extruded[original.id] ?? original;
 		const preview = drag?.preview[piece.id];
 		if (preview && drag.duplicate) {
 			result.push({ piece, selected: false, ghost: false });

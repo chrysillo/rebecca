@@ -14,6 +14,6 @@ export const CONFIG = {
 	},
 	rotate: {
 		step: 45,
-		fineStep: 15,
+		fineStep: 5,
 	},
 } as const;

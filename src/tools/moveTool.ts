@@ -1,10 +1,10 @@
-import { CONFIG } from "../config";
-import type { FacePlane } from "../geometry/box";
-import { pieceFacePlanes } from "../geometry/box";
-import { clampToFloor } from "../geometry/floor";
-import { type Axis, add, axisVector, scale, type Vec3 } from "../geometry/vec";
-import type { Id, Piece, Transform } from "../model/types";
-import { snapTranslation } from "../snapping/snapTranslation";
+import { CONFIG } from "@/config";
+import type { FacePlane } from "@/geometry/box";
+import { pieceFacePlanes } from "@/geometry/box";
+import { clampToFloor } from "@/geometry/floor";
+import { type Axis, add, axisVector, scale, type Vec3 } from "@/geometry/vec";
+import type { Id, Piece, Transform } from "@/model/types";
+import { snapTranslation } from "@/snapping/snapTranslation";
 
 export type MoveInput = {
 	/** The pieces being moved, at their positions when the drag started. */

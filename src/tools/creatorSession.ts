@@ -1,23 +1,36 @@
-import { commands } from "../commands";
-import { CONFIG } from "../config";
-import type { ScreenPoint } from "../input/pointer";
-import { createFraming, createSheet } from "../model/createPiece";
-import type { PieceKind } from "../model/types";
-import { CREATE_OPTIONS, type Presets } from "../state/creator";
-import { useAppStore } from "../state/store";
+import { commands } from "@/commands";
+import type { ScreenPoint } from "@/input/pointer";
+import { newId } from "@/model/createPiece";
+import {
+	findStock,
+	orderedStock,
+	type Stock,
+	type StockSize,
+	stockOfKind,
+} from "@/model/stock";
+import type { Id, PieceKind } from "@/model/types";
+import { useAppStore } from "@/state/store";
 
 const store = () => useAppStore.getState();
+const options = () => orderedStock(store().doc.stock);
 
 /** Holding R at least this long, then releasing, creates the highlighted option (weapon-wheel style). */
 const HOLD_MS = 250;
 
-/** Opens the wheel at `at` with the last-used kind preselected. */
+/** Opens the wheel at `at` with the last-used stock preselected. */
 export function openCreator(at: ScreenPoint) {
+	const all = options();
+	if (all.length === 0) {
+		store().showNotice("Add a size in the Stock panel first.");
+		return;
+	}
+	const last = store().lastCreated;
+	const highlighted = all.some((s) => s.id === last) && last ? last : all[0].id;
 	store().setCreator({
 		at,
-		highlighted: store().lastCreated,
+		highlighted,
 		typed: "",
-		openedAt: Date.now(),
+		openedAt: performance.now(),
 	});
 }
 
@@ -25,62 +38,56 @@ export function cancelCreator() {
 	store().setCreator(null);
 }
 
-export function highlight(kind: PieceKind) {
+export function highlight(stockId: Id) {
 	const c = store().creator;
-	if (c && c.highlighted !== kind)
-		store().setCreator({ ...c, highlighted: kind, typed: "" });
+	if (c && c.highlighted !== stockId)
+		store().setCreator({ ...c, highlighted: stockId, typed: "" });
 }
 
 /** Moves the highlight to the next (+1) or previous (−1) option. */
 export function cycle(step: 1 | -1) {
 	const c = store().creator;
 	if (!c) return;
-	const i = CREATE_OPTIONS.indexOf(c.highlighted);
-	const n = CREATE_OPTIONS.length;
-	highlight(CREATE_OPTIONS[(i + step + n) % n]);
-}
-
-/** Creates the highlighted option with its preset (updated by anything typed), then closes. */
-export function confirmCreate() {
-	const { creator, presets, setPresets, setLastCreated, setCreator, apply } =
-		store();
-	if (!creator) return;
-	const kind = creator.highlighted;
-	const next = withTyped(presets, kind, creator.typed);
-	setPresets(next);
-	setLastCreated(kind);
-	setCreator(null);
-	const { sheet, framing } = CONFIG.defaults;
-	apply(
-		commands.addPiece(
-			kind === "sheet"
-				? createSheet({
-						length: sheet.length,
-						width: sheet.width,
-						...next.sheet,
-					})
-				: createFraming({ length: framing.length, ...next.framing }),
-		),
-	);
+	const all = options();
+	const i = all.findIndex((s) => s.id === c.highlighted);
+	highlight(all[(i + step + all.length) % all.length].id);
 }
 
 /**
- * Presets with a typed size applied to one kind, when it parses.
- * Sheet: one number (thickness). Framing: "45x90" or "45 90" (width × depth); one number sets both.
+ * The stock a confirm would use: the highlighted entry, or — when a different size was typed —
+ * the matching existing entry of that kind, or a brand-new one.
  */
-export function withTyped(
-	presets: Presets,
-	kind: PieceKind,
-	typed: string,
-): Presets {
+export function resolveStock(): Stock | null {
+	const { creator, doc } = store();
+	const highlighted = creator ? doc.stock[creator.highlighted] : undefined;
+	if (!creator || !highlighted) return null;
+	const size = typedSize(highlighted.kind, creator.typed);
+	if (!size) return highlighted;
+	return (
+		findStock(doc.stock, highlighted.kind, size) ??
+		({ id: newId(), kind: highlighted.kind, ...size } as Stock)
+	);
+}
+
+/** Creates a piece from the highlighted (or typed) stock, then closes. One undo step. */
+export function confirmCreate() {
+	const stock = resolveStock();
+	store().setCreator(null);
+	if (!stock) return;
+	store().setLastCreated(stock.id);
+	store().apply(commands.addPieceFromStock(stock));
+}
+
+/** Sheet: one number (thickness). Framing: "45x90" or "45 90" (width × depth); one number sets both. */
+export function typedSize(kind: PieceKind, typed: string): StockSize | null {
 	const numbers = typed
 		.split(/[x×*\s]+/i)
 		.filter(Boolean)
 		.map(Number);
-	if (numbers.length === 0 || numbers.some((n) => !(n > 0))) return presets;
-	if (kind === "sheet") return { ...presets, sheet: { thickness: numbers[0] } };
+	if (numbers.length === 0 || numbers.some((n) => !(n > 0))) return null;
+	if (kind === "sheet") return { thickness: numbers[0] };
 	const [width, depth = numbers[0]] = numbers;
-	return { ...presets, framing: { width, depth } };
+	return { width, depth };
 }
 
 /** Letter shortcuts that pick and create in one go (R then S = new sheet). */
@@ -89,6 +96,17 @@ const QUICK_PICK: Record<string, PieceKind> = {
 	KeyF: "framing",
 };
 
+/** S / F: the highlighted entry if it's that kind, else the first entry of that kind. */
+function quickPick(kind: PieceKind) {
+	const c = store().creator;
+	const current = c ? store().doc.stock[c.highlighted] : undefined;
+	const target =
+		current?.kind === kind ? current : stockOfKind(store().doc.stock, kind)[0];
+	if (!target) return;
+	highlight(target.id);
+	confirmCreate();
+}
+
 /** Keys while the wheel is open. Returns true when the key was used. */
 export function handleCreatorKey(e: KeyboardEvent): boolean {
 	const { creator, setCreator } = store();
@@ -96,12 +114,10 @@ export function handleCreatorKey(e: KeyboardEvent): boolean {
 	// Holding R auto-repeats; the wheel is already open.
 	if (e.repeat && e.code === "KeyR") return true;
 
+	const all = options();
 	const optionNumber = Number(e.key);
-	const quickPick = QUICK_PICK[e.code];
-	if (quickPick) {
-		highlight(quickPick);
-		confirmCreate();
-	} else if (e.key === "Enter" || e.key === " ") confirmCreate();
+	if (QUICK_PICK[e.code]) quickPick(QUICK_PICK[e.code]);
+	else if (e.key === "Enter" || e.key === " ") confirmCreate();
 	else if (e.key === "Escape") cancelCreator();
 	else if (
 		e.code === "KeyR" ||
@@ -111,12 +127,8 @@ export function handleCreatorKey(e: KeyboardEvent): boolean {
 	)
 		cycle(1);
 	else if (e.key === "ArrowLeft" || e.key === "ArrowUp") cycle(-1);
-	else if (
-		!creator.typed &&
-		optionNumber >= 1 &&
-		optionNumber <= CREATE_OPTIONS.length
-	)
-		highlight(CREATE_OPTIONS[optionNumber - 1]);
+	else if (!creator.typed && optionNumber >= 1 && optionNumber <= all.length)
+		highlight(all[optionNumber - 1].id);
 	else if (e.key === "Backspace")
 		setCreator({ ...creator, typed: creator.typed.slice(0, -1) });
 	else if (/^[0-9.xX× ]$/.test(e.key))
@@ -128,6 +140,8 @@ export function handleCreatorKey(e: KeyboardEvent): boolean {
 /** Releasing R after holding it creates the highlighted option; a quick tap leaves the wheel open. */
 export function handleCreatorKeyUp(e: KeyboardEvent) {
 	const creator = store().creator;
-	if (creator && e.code === "KeyR" && Date.now() - creator.openedAt >= HOLD_MS)
+	// Use the key-up's own timestamp (when the key was actually released), not "now": if rendering
+	// the wheel delayed this handler, a quick tap must not be mistaken for a hold.
+	if (creator && e.code === "KeyR" && e.timeStamp - creator.openedAt >= HOLD_MS)
 		confirmCreate();
 }

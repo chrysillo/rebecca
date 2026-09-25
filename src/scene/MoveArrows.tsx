@@ -1,14 +1,17 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useState } from "react";
-import { AXES, type Axis, type Vec3 } from "../geometry/vec";
+import { DoubleSide } from "three";
+import { AXES, type Axis, type Vec3 } from "@/geometry/vec";
 import {
 	AXIS_COLOR,
 	GIZMO_RENDER_ORDER,
 	GIZMO_USER_DATA,
 	gizmoMaterialProps,
+	HANDLE_HIT_RADIUS,
 	HOVER_COLOR,
-} from "./gizmoStyle";
-import { useMoveDrag } from "./useMoveDrag";
+} from "@/scene/gizmoStyle";
+import type { CameraView } from "@/scene/useCameraView";
+import { useMoveDrag } from "@/scene/useMoveDrag";
 
 /** Arrow rotations: a cylinder points along +Y by default. */
 const ARROW_ROTATION: Record<Axis, [number, number, number]> = {
@@ -17,14 +20,25 @@ const ARROW_ROTATION: Record<Axis, [number, number, number]> = {
 	z: [Math.PI / 2, 0, 0],
 };
 
-/** X/Y/Z arrows. Dragging an arrow moves the selection along that axis. */
-export function MoveArrows({ origin }: { origin: Vec3 }) {
+/**
+ * X/Y/Z arrows. Dragging an arrow moves the selection along that axis. Like Shapr3D, each arrow
+ * points to the camera's side of the gizmo (flipping as you orbit), and one aimed straight at the
+ * camera is hidden, since it's just a dot and can't be dragged. Moving works along the axis line
+ * either way, so flipping is purely visual.
+ */
+export function MoveArrows({
+	origin,
+	view,
+}: {
+	origin: Vec3;
+	view: CameraView;
+}) {
 	const [hovered, setHovered] = useState<Axis | null>(null);
 	const drag = useMoveDrag(origin);
 
 	return (
-		<>
-			{AXES.map((axis) => (
+		<group scale={view.sides}>
+			{AXES.filter((a) => !view.headOn.includes(a)).map((axis) => (
 				<Arrow
 					key={axis}
 					axis={axis}
@@ -36,7 +50,7 @@ export function MoveArrows({ origin }: { origin: Vec3 }) {
 					onPointerOut={() => setHovered(null)}
 				/>
 			))}
-		</>
+		</group>
 	);
 }
 
@@ -51,9 +65,12 @@ type HandleProps = {
 };
 
 /** Arrow layout along its axis, in gizmo units (1 = full gizmo size). */
-const SHAFT_START = 0.16;
+/** Shafts start well out from the centre, leaving room for the pivot dot and rotate arcs. */
+const SHAFT_START = 0.45;
 const SHAFT_END = 0.86;
 const HEAD_LENGTH = 0.14;
+/** The grab area reaches a little past the arrow tip. */
+const HIT_END = 1.08;
 
 /** One slim arrow, drawn on top of everything, with a fatter invisible hit area. */
 function Arrow({ axis, color, ...events }: HandleProps) {
@@ -75,12 +92,25 @@ function Arrow({ axis, color, ...events }: HandleProps) {
 				<meshBasicMaterial {...gizmoMaterialProps(color)} />
 			</mesh>
 			<mesh
-				position={[0, (SHAFT_START + 1) / 2, 0]}
+				position={[0, (SHAFT_START + HIT_END) / 2, 0]}
 				userData={GIZMO_USER_DATA}
 				{...events}
 			>
-				<cylinderGeometry args={[0.06, 0.06, 1 - SHAFT_START, 8]} />
-				<meshBasicMaterial transparent opacity={0} depthWrite={false} />
+				<cylinderGeometry
+					args={[
+						HANDLE_HIT_RADIUS,
+						HANDLE_HIT_RADIUS,
+						HIT_END - SHAFT_START,
+						8,
+					]}
+				/>
+				{/* Double-sided: the arrows sit in a mirrored group, which flips winding for raycasts. */}
+				<meshBasicMaterial
+					transparent
+					opacity={0}
+					depthWrite={false}
+					side={DoubleSide}
+				/>
 			</mesh>
 		</group>
 	);

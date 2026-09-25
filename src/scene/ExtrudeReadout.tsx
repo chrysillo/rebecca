@@ -1,10 +1,10 @@
 import { Html } from "@react-three/drei";
 import { useMemo } from "react";
-import { faceCentre } from "../geometry/box";
-import { extrudableDimension } from "../geometry/extrude";
-import { effectiveDistance } from "../state/extrude";
-import { extrudePreview } from "../state/selectors";
-import { useAppStore } from "../state/store";
+import { faceCentre } from "@/geometry/box";
+import { extrudableDimension } from "@/geometry/extrude";
+import { effectiveDistance, primaryFace } from "@/state/extrude";
+import { extrudePreview } from "@/state/selectors";
+import { useAppStore } from "@/state/store";
 
 const DIMENSION_LABEL: Record<string, string> = {
 	length: "Length",
@@ -16,13 +16,14 @@ export function ExtrudeReadout() {
 	const doc = useAppStore((s) => s.doc);
 	const extrude = useAppStore((s) => s.extrude);
 	const preview = useMemo(() => extrudePreview(doc, extrude), [doc, extrude]);
-	if (!extrude || !preview) return null;
+	const face = extrude ? primaryFace(extrude) : undefined;
+	const piece = face ? preview[face.pieceId] : undefined;
+	if (!extrude || !face || !piece) return null;
 
-	const key = extrudableDimension(preview, extrude.face);
-	const value = key
-		? (preview as unknown as Record<string, number>)[key]
-		: null;
-	const centre = faceCentre(preview, extrude.face);
+	const key = extrudableDimension(piece, face);
+	const value = key ? (piece as unknown as Record<string, number>)[key] : null;
+	const centre = faceCentre(piece, face);
+	const others = extrude.faces.length - 1;
 	const distance = effectiveDistance(extrude);
 
 	return (
@@ -46,6 +47,7 @@ export function ExtrudeReadout() {
 				{key && value !== null && (
 					<div className="rounded bg-white/90 px-1.5 text-[10px] tabular-nums text-neutral-600 shadow-sm">
 						{DIMENSION_LABEL[key] ?? key} {value} mm
+						{others > 0 && ` · +${others} more face${others > 1 ? "s" : ""}`}
 					</div>
 				)}
 			</div>

@@ -1,4 +1,4 @@
-import type { Piece, PieceKind } from "./types";
+import type { Piece, PieceKind } from "@/model/types";
 
 const KIND_NAME: Record<PieceKind, string> = {
 	sheet: "Sheet",

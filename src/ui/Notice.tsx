@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useAppStore } from "../state/store";
+import { useAppStore } from "@/state/store";
 
 const SHOW_MS = 2800;
 

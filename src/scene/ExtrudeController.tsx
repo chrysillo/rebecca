@@ -1,17 +1,18 @@
 import { useThree } from "@react-three/fiber";
 import { useEffect } from "react";
 import { type PerspectiveCamera, Raycaster, Vector2, Vector3 } from "three";
-import { CONFIG } from "../config";
-import { faceCentre, faceNormal } from "../geometry/box";
-import { closestParamOnAxis } from "../geometry/rays";
-import { isHeld } from "../input/modifiers";
-import { lastPointer } from "../input/pointer";
-import { snapTargets } from "../snapping/targets";
-import { pixelsToMm } from "../snapping/tolerance";
-import { useAppStore } from "../state/store";
-import { cancelExtrude, confirmExtrude } from "../tools/extrudeSession";
-import { computeExtrude } from "../tools/extrudeTool";
-import { toRay } from "./useGizmoPointer";
+import { CONFIG } from "@/config";
+import { faceCentre, faceNormal } from "@/geometry/box";
+import { closestParamOnAxis } from "@/geometry/rays";
+import { isHeld } from "@/input/modifiers";
+import { lastPointer } from "@/input/pointer";
+import { toRay } from "@/scene/useGizmoPointer";
+import { snapTargets } from "@/snapping/targets";
+import { pixelsToMm } from "@/snapping/tolerance";
+import { primaryFace } from "@/state/extrude";
+import { useAppStore } from "@/state/store";
+import { cancelExtrude, confirmExtrude } from "@/tools/extrudeSession";
+import { computeExtrude } from "@/tools/extrudeTool";
 
 type ModifierFlags = {
 	shiftKey: boolean;
@@ -43,8 +44,9 @@ export function ExtrudeController() {
 
 		const update = (x: number, y: number, modifiers: ModifierFlags) => {
 			const { extrude, doc, setExtrude } = useAppStore.getState();
-			const piece = extrude ? doc.pieces[extrude.face.pieceId] : undefined;
-			if (!extrude || !piece) return;
+			const face = extrude ? primaryFace(extrude) : undefined;
+			const piece = face ? doc.pieces[face.pieceId] : undefined;
+			if (!extrude || !face || !piece) return;
 
 			const rect = canvas.getBoundingClientRect();
 			const ndc = new Vector2(
@@ -52,8 +54,9 @@ export function ExtrudeController() {
 				-((y - rect.top) / rect.height) * 2 + 1,
 			);
 			raycaster.setFromCamera(ndc, camera);
-			const centre = faceCentre(piece, extrude.face);
-			const normal = faceNormal(piece, extrude.face.axis, extrude.face.sign);
+			// The primary (last-clicked) face follows the mouse; the others move by the same amount.
+			const centre = faceCentre(piece, face);
+			const normal = faceNormal(piece, face.axis, face.sign);
 			const param = closestParamOnAxis(toRay(raycaster.ray), centre, normal);
 			if (param === null) return;
 			if (extrude.startParam === null) {
@@ -66,8 +69,11 @@ export function ExtrudeController() {
 			);
 			const result = computeExtrude({
 				piece,
-				face: extrude.face,
-				targets: snapTargets(Object.values(doc.pieces), new Set([piece.id])),
+				face,
+				targets: snapTargets(
+					Object.values(doc.pieces),
+					new Set(extrude.faces.map((f) => f.pieceId)),
+				),
 				distance: param - extrude.startParam,
 				fine: isHeld("fine", modifiers),
 				tolerance: pixelsToMm(

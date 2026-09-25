@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { displayPieces } from "../state/selectors";
-import { useAppStore } from "../state/store";
-import { PieceMesh } from "./PieceMesh";
+import { PieceMesh } from "@/scene/PieceMesh";
+import { displayPieces } from "@/state/selectors";
+import { useAppStore } from "@/state/store";
 
 /** Renders every piece in the document, with any drag or extrude preview applied. */
 export function Pieces() {

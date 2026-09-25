@@ -1,7 +1,7 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useThree } from "@react-three/fiber";
 import type { Ray as ThreeRay } from "three";
-import type { Ray } from "../geometry/rays";
+import type { Ray } from "@/geometry/rays";
 
 type Controls = { enabled: boolean } | null;
 

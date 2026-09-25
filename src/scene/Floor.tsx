@@ -1,7 +1,7 @@
 import { Grid } from "@react-three/drei";
 import { useMemo } from "react";
-import { piecesAabb } from "../geometry/box";
-import { useAppStore } from "../state/store";
+import { piecesAabb } from "@/geometry/box";
+import { useAppStore } from "@/state/store";
 
 const SECTION = 1000;
 /** Grid shown around the pieces, beyond their extent, in mm. */

@@ -1,5 +1,5 @@
-import type { Piece } from "../model/types";
-import { pieceCorners } from "./box";
+import { pieceCorners } from "@/geometry/box";
+import type { Piece } from "@/model/types";
 
 /** Lowest point of the piece in world Z. */
 export const lowestZ = (piece: Piece): number =>

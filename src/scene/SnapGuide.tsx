@@ -1,6 +1,6 @@
 import { Line } from "@react-three/drei";
-import { faceCorners } from "../geometry/box";
-import { useAppStore } from "../state/store";
+import { faceCorners } from "@/geometry/box";
+import { useAppStore } from "@/state/store";
 
 /** Outlines the face being snapped to during a drag or extrude. */
 export function SnapGuide() {

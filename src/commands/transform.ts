@@ -1,9 +1,8 @@
-import { pieceAabb } from "../geometry/box";
-import { clampToFloor } from "../geometry/floor";
-import { type Axis, roundVec, type Vec3 } from "../geometry/vec";
-import type { Id, Rotation, Transform } from "../model/types";
-import type { Command } from "../state/document";
-import { replacePiece } from "./pieces";
+import { replacePiece } from "@/commands/pieces";
+import { clampToFloor } from "@/geometry/floor";
+import { roundVec, type Vec3 } from "@/geometry/vec";
+import type { Id, Transform } from "@/model/types";
+import type { Command } from "@/state/document";
 
 const sameVec = (a: Vec3, b: Vec3) => a.x === b.x && a.y === b.y && a.z === b.z;
 
@@ -27,29 +26,4 @@ export const setTransforms =
 				next = replacePiece(next, moved);
 		}
 		return next;
-	};
-
-export const setRotation =
-	(id: Id, rotation: Rotation): Command =>
-	(doc) => {
-		const piece = doc.pieces[id];
-		if (!piece) return doc;
-		return setTransforms({ [id]: { position: piece.position, rotation } })(doc);
-	};
-
-/**
- * Moves a piece so the minimum corner of its bounding box sits at `value` on one world axis.
- * This is the position shown in the properties panel ("where does this piece start?").
- */
-export const setCornerCoordinate =
-	(id: Id, axis: Axis, value: number): Command =>
-	(doc) => {
-		const piece = doc.pieces[id];
-		if (!piece) return doc;
-		const shift = value - pieceAabb(piece).min[axis];
-		const position = {
-			...piece.position,
-			[axis]: piece.position[axis] + shift,
-		};
-		return setTransforms({ [id]: { position, rotation: piece.rotation } })(doc);
 	};

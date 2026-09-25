@@ -1,93 +1,110 @@
-import { useFrame } from "@react-three/fiber";
 import { useState } from "react";
-import { Vector3 } from "three";
-import { AXES, type Axis, type Vec3 } from "../geometry/vec";
+import { DoubleSide } from "three";
+import { AXES, type Axis } from "@/geometry/vec";
 import {
 	AXIS_COLOR,
 	GIZMO_RENDER_ORDER,
 	GIZMO_USER_DATA,
 	gizmoMaterialProps,
+	HANDLE_HIT_RADIUS,
 	HOVER_COLOR,
 	PLANE_ORIENTATION,
-} from "./gizmoStyle";
-import type { HandleProps } from "./MoveArrows";
-import { useRotateDrag } from "./useRotateDrag";
+	ROTATE_RADIUS,
+} from "@/scene/gizmoStyle";
+import type { HandleProps } from "@/scene/MoveArrows";
+import { RotationGuide } from "@/scene/RotationGuide";
+import type { CameraView } from "@/scene/useCameraView";
+import { useRotateDrag } from "@/scene/useRotateDrag";
+import { useAppStore } from "@/state/store";
 
 /** Arc handles sit between the move arrows, like Shapr3D's curved rotate arrows. */
-const ARC_RADIUS = 0.85;
-const ARC_SPAN = (30 * Math.PI) / 180;
-const ARC_START = Math.PI / 4 - ARC_SPAN / 2;
+const ARC_RADIUS = ROTATE_RADIUS;
+const ARC_SPAN = (18 * Math.PI) / 180;
+/**
+ * Where each arc sits in its plane, as the angle of its middle (before the camera-facing mirror).
+ * Chosen by eye so the three arcs spread around the gizmo instead of bunching up:
+ * X between its two arrows; Y on the upper side, away from X; Z opposite. Nothing sits below the piece.
+ */
+const ARC_MIDDLE: Record<Axis, number> = {
+	x: Math.PI / 4,
+	y: -Math.PI / 4,
+	z: -Math.PI / 4,
+};
 const HEAD_LENGTH = 0.09;
-
-/** Below this |cos| between view direction and an arc's axis, the arc is edge-on: hidden, as it can't be dragged. */
-const EDGE_ON = 0.12;
-
-type Sides = [number, number, number];
+/** Angle each arrowhead reaches past the end of its arc (head length plus a little slack). */
+const HEAD_SPAN = (HEAD_LENGTH * 1.3) / ARC_RADIUS;
 
 /**
  * One curved, double-headed arrow per axis. Dragging an arc turns the selection about that axis,
  * around the selection centre. Arcs sit in the quadrant facing the camera so they're never hidden behind the model.
  */
-export function RotateArcs({ origin }: { origin: Vec3 }) {
+export function RotateArcs({ view }: { view: CameraView }) {
 	const [hovered, setHovered] = useState<Axis | null>(null);
-	const [view, setView] = useState<{ sides: Sides; edgeOn: Axis[] }>({
-		sides: [1, 1, 1],
-		edgeOn: [],
-	});
 	const drag = useRotateDrag();
-
-	useFrame(({ camera }) => {
-		const centre = new Vector3(origin.x, origin.y, origin.z);
-		const dir = camera.position.clone().sub(centre).normalize();
-		const sides: Sides = [
-			Math.sign(dir.x) || 1,
-			Math.sign(dir.y) || 1,
-			Math.sign(dir.z) || 1,
-		];
-		const edgeOn = AXES.filter((a) => Math.abs(dir[a]) < EDGE_ON);
-		if (
-			sides.join() !== view.sides.join() ||
-			edgeOn.join() !== view.edgeOn.join()
-		)
-			setView({ sides, edgeOn });
-	});
+	// Guides show for the arc under the mouse, and stay for the whole drag.
+	const draggingAxis = useAppStore((s) => s.drag?.rotation?.axis ?? null);
+	const guideAxis = draggingAxis ?? hovered;
+	const visible = AXES.filter((a) => !view.edgeOn.includes(a));
 
 	return (
-		// Mirroring per world axis moves every arc into the camera-facing quadrant.
-		<group scale={view.sides}>
-			{AXES.filter((a) => !view.edgeOn.includes(a)).map((axis) => (
-				<Arc
-					key={axis}
-					axis={axis}
-					color={hovered === axis ? HOVER_COLOR : AXIS_COLOR[axis]}
-					onPointerDown={drag.onPointerDown(axis)}
-					onPointerMove={drag.onPointerMove}
-					onPointerUp={drag.onPointerUp}
-					onPointerOver={() => setHovered(axis)}
-					onPointerOut={() => setHovered(null)}
-				/>
+		<>
+			{visible.map((axis) => (
+				<RotationGuide key={axis} axis={axis} active={axis === guideAxis} />
 			))}
-		</group>
+			{/* Mirroring per world axis moves every arc into the camera-facing quadrant. */}
+			<group scale={view.sides}>
+				{visible.map((axis) => (
+					<Arc
+						key={axis}
+						axis={axis}
+						color={hovered === axis ? HOVER_COLOR : AXIS_COLOR[axis]}
+						onPointerDown={drag.onPointerDown(axis)}
+						onPointerMove={drag.onPointerMove}
+						onPointerUp={drag.onPointerUp}
+						onPointerOver={() => setHovered(axis)}
+						onPointerOut={() => setHovered(null)}
+					/>
+				))}
+			</group>
+		</>
 	);
 }
 
 /** A short arc (ARC_SPAN) with an arrowhead at each end, plus a fatter invisible hit area. */
 function Arc({ axis, color, ...events }: HandleProps) {
-	const end = ARC_START + ARC_SPAN;
+	const start = ARC_MIDDLE[axis] - ARC_SPAN / 2;
+	const end = start + ARC_SPAN;
 	return (
 		<group rotation={PLANE_ORIENTATION[axis]}>
-			<group rotation={[0, 0, ARC_START]}>
+			<group rotation={[0, 0, start]}>
 				<mesh renderOrder={GIZMO_RENDER_ORDER}>
 					<torusGeometry args={[ARC_RADIUS, 0.008, 8, 48, ARC_SPAN]} />
 					<meshBasicMaterial {...gizmoMaterialProps(color)} />
 				</mesh>
+			</group>
+			{/* Grab area covers the whole visible arrow, heads included. Double-sided because the
+			    arcs sit in a mirrored group, which flips triangle winding for raycasts. */}
+			<group rotation={[0, 0, start - HEAD_SPAN]}>
 				<mesh userData={GIZMO_USER_DATA} {...events}>
-					<torusGeometry args={[ARC_RADIUS, 0.06, 8, 24, ARC_SPAN]} />
-					<meshBasicMaterial transparent opacity={0} depthWrite={false} />
+					<torusGeometry
+						args={[
+							ARC_RADIUS,
+							HANDLE_HIT_RADIUS,
+							8,
+							24,
+							ARC_SPAN + 2 * HEAD_SPAN,
+						]}
+					/>
+					<meshBasicMaterial
+						transparent
+						opacity={0}
+						depthWrite={false}
+						side={DoubleSide}
+					/>
 				</mesh>
 			</group>
 			<ArrowHead angle={end} color={color} />
-			<ArrowHead angle={ARC_START} color={color} backwards />
+			<ArrowHead angle={start} color={color} backwards />
 		</group>
 	);
 }

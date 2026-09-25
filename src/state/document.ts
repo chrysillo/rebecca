@@ -1,5 +1,7 @@
-import type { FaceRef } from "../geometry/box";
-import type { Id, Piece } from "../model/types";
+import type { FaceRef } from "@/geometry/box";
+import { newId } from "@/model/createPiece";
+import type { Stock } from "@/model/stock";
+import type { Id, Piece, Pivot } from "@/model/types";
 
 /**
  * Everything that is saved and undoable.
@@ -7,19 +9,32 @@ import type { Id, Piece } from "../model/types";
  */
 export type DocumentState = {
 	pieces: Record<Id, Piece>;
-	/** Ordered list of selected ids; an array so multi-select is a small step later. */
+	/** The project's sheet thicknesses and framing sections. */
+	stock: Record<Id, Stock>;
+	/** Selected pieces, in the order they were added. */
 	selection: Id[];
+	/** Pivot used when several pieces are selected (a single piece uses its own). Resets when the selection changes. */
+	groupPivot: Pivot;
 	/**
-	 * A single selected face (e.g. for push/pull later). Selecting a face clears the piece
-	 * selection and vice versa, so at most one of the two is ever non-empty.
+	 * Selected faces, in the order they were clicked (the last one drives an extrude).
+	 * Selecting faces clears the piece selection and vice versa, so at most one of the two is non-empty.
 	 */
-	selectedFace: FaceRef | null;
+	selectedFaces: FaceRef[];
 };
+
+/** A new project starts with one common size of each kind. */
+function starterStock(): Record<Id, Stock> {
+	const sheet: Stock = { id: newId(), kind: "sheet", thickness: 18 };
+	const framing: Stock = { id: newId(), kind: "framing", width: 38, depth: 63 };
+	return { [sheet.id]: sheet, [framing.id]: framing };
+}
 
 export const emptyDocument: DocumentState = {
 	pieces: {},
+	stock: starterStock(),
 	selection: [],
-	selectedFace: null,
+	groupPivot: "centre",
+	selectedFaces: [],
 };
 
 /** A document change: a pure function returning a new document, or the same one when nothing changed. */

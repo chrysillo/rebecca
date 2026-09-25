@@ -1,9 +1,9 @@
-import { CONFIG } from "../config";
-import { rotateVector } from "../geometry/box";
-import { clampToFloor } from "../geometry/floor";
-import { rotateAboutWorldAxis } from "../geometry/rotation";
-import { type Axis, add, sub, type Vec3 } from "../geometry/vec";
-import type { Id, Piece, Transform } from "../model/types";
+import { CONFIG } from "@/config";
+import { rotateVector } from "@/geometry/box";
+import { clampToFloor } from "@/geometry/floor";
+import { rotateAboutWorldAxis } from "@/geometry/rotation";
+import { type Axis, add, sub, type Vec3 } from "@/geometry/vec";
+import type { Id, Piece, Transform } from "@/model/types";
 
 export type RotateInput = {
 	/** The pieces being rotated, as they were when the drag started. */

@@ -1,6 +1,6 @@
-import { commands } from "../commands";
-import type { Id, Transform } from "../model/types";
-import { useAppStore } from "../state/store";
+import { commands } from "@/commands";
+import type { Id, Transform } from "@/model/types";
+import { useAppStore } from "@/state/store";
 
 /** Ends a gizmo drag: one undoable command, or nothing if the pieces didn't change. */
 export function commitDrag() {

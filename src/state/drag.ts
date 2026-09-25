@@ -1,6 +1,6 @@
-import type { FacePlane } from "../geometry/box";
-import type { Axis } from "../geometry/vec";
-import type { Id, Transform } from "../model/types";
+import type { FacePlane } from "@/geometry/box";
+import type { Axis } from "@/geometry/vec";
+import type { Id, Transform } from "@/model/types";
 
 /** Transient state of an in-progress gizmo drag. Never stored in history. */
 export type DragState = {
