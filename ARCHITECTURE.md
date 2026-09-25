@@ -74,7 +74,7 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 | `gizmo/` | The move/rotate gizmo: `Gizmos` (entry), arrows, arcs, pivot handle, rotation guide and readout, drag hooks, `useCameraView` |
 | `extrude/` | Face highlight, face arrow, extrude controller and readout |
 | `annotations/` | Lines and labels over the model: measurements, live gaps, `DimensionLine`, snap guide |
-| `camera/` | `ViewCube` (camera moves) with its `FaceCube` and `AxisTriad`, and `ScreenProjection` (shares the camera with the UI through `input/screen`) |
+| `camera/` | `ViewCube` (camera moves) with its `FaceCube`, `AxisTriad` and `CubeHud` (the corner overlay with its own perspective camera), and `ScreenProjection` (shares the camera with the UI through `input/screen`) |
 | `export/` | `ViewExporter` (renders the views sheet), `drawDimensions` (its 2D dimension lines) |
 
 - A feature folder imports only from itself and `shared/`. Something two folders both need moves to `shared/`.

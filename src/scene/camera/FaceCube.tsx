@@ -30,7 +30,12 @@ const FACE = { fill: "#f2f1ee", ink: "#737373" };
 const HOVER = { fill: "#eff6ff", ink: SELECTION_COLOR };
 /** Label texture resolution; the font size is relative to it. */
 const TEX = 256;
-const LABEL_FONT = '600 76px "Barlow Condensed", system-ui, sans-serif';
+const LABEL_SIZE = 76;
+const labelFont = (size: number) =>
+	`600 ${size}px "Barlow Condensed", system-ui, sans-serif`;
+const LABEL_FONT = labelFont(LABEL_SIZE);
+/** Widest a label may be, as a share of the flat face, so long names like "BOTTOM" stay inside it. */
+const LABEL_MAX_WIDTH = 0.82;
 
 /**
  * Faces in BoxGeometry material order (+X, -X, +Y, -Y, +Z, -Z of the cube mesh), with the
@@ -153,12 +158,18 @@ function labelTexture(
 		ctx.fillStyle = look.fill;
 		ctx.fillRect(inset, inset, TEX - 2 * inset, TEX - 2 * inset);
 
+		const text = label.toUpperCase();
 		ctx.fillStyle = look.ink;
 		ctx.font = LABEL_FONT;
 		ctx.letterSpacing = `${TEX * 0.02}px`;
 		ctx.textAlign = "center";
 		ctx.textBaseline = "middle";
-		ctx.fillText(label.toUpperCase(), TEX / 2, TEX / 2 + TEX * 0.02);
+		// Shrink to fit rather than overflow, which also covers the wider fallback font drawn
+		// before the UI font has loaded.
+		const maxWidth = (TEX - 2 * inset) * LABEL_MAX_WIDTH;
+		const width = ctx.measureText(text).width;
+		if (width > maxWidth) ctx.font = labelFont((LABEL_SIZE * maxWidth) / width);
+		ctx.fillText(text, TEX / 2, TEX / 2 + TEX * 0.02);
 	}
 	const texture = new CanvasTexture(canvas);
 	texture.anisotropy = 4;

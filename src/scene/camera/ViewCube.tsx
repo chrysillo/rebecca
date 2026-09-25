@@ -1,9 +1,9 @@
-import { GizmoHelper } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type PerspectiveCamera, Quaternion, Vector3 } from "three";
 import { piecesAabb } from "@/geometry/box";
 import { AxisTriad } from "@/scene/camera/AxisTriad";
+import { CubeHud } from "@/scene/camera/CubeHud";
 import { FaceCube } from "@/scene/camera/FaceCube";
 import { useOrbitControls } from "@/scene/shared/useOrbitControls";
 import { useAppStore } from "@/state/store";
@@ -36,7 +36,6 @@ type Animation = {
 };
 
 const DURATION = 0.35; // seconds
-const CUBE_SIZE = 56; // pixels
 /**
  * Top-right navigation cube. Clicking a face (Front, Back, Left, Right, Top, Bottom)
  * turns the camera to look at the model from that side. The hovered face is the one that will be picked.
@@ -46,6 +45,8 @@ export function ViewCube() {
 	const controls = useOrbitControls();
 	const animation = useRef<Animation | null>(null);
 	const flat = useRef<Flat | null>(null);
+	/** Mirrors `flat` for the axis triad, which drops the arm pointing along a flat view. */
+	const [flatView, setFlatView] = useState<Vector3 | null>(null);
 
 	/** Swaps between the normal and the narrow lens, keeping the framing the same. */
 	const setLens = (fov: number) => {
@@ -68,6 +69,7 @@ export function ViewCube() {
 			far: cam.far,
 			reach: Math.max(20000, (fitModel(ORTHO_FOV)?.radius ?? 0) * 4),
 		};
+		setFlatView(direction);
 		setLens(ORTHO_FOV);
 		fitDepth();
 		controls.update();
@@ -92,6 +94,7 @@ export function ViewCube() {
 		const cam = camera as PerspectiveCamera;
 		if (!f || !controls) return;
 		flat.current = null;
+		setFlatView(null);
 		setLens(f.fov);
 		cam.near = f.near;
 		cam.far = f.far;
@@ -158,14 +161,12 @@ export function ViewCube() {
 	};
 
 	return (
-		<GizmoHelper alignment="top-right" margin={[96, 84]}>
-			<group rotation={[Math.PI / 2, 0, 0]} scale={CUBE_SIZE}>
+		<CubeHud>
+			<group rotation={[Math.PI / 2, 0, 0]}>
 				<FaceCube onPick={lookFrom} controls={controls} />
 			</group>
-			<group scale={CUBE_SIZE}>
-				<AxisTriad />
-			</group>
-		</GizmoHelper>
+			<AxisTriad flatView={flatView} />
+		</CubeHud>
 	);
 }
 
