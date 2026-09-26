@@ -10,52 +10,68 @@ const MARGIN_RIGHT = 96;
 const MARGIN_TOP = 84;
 /**
  * How far the cube's camera stands from it, in cube widths. Nearer shows stronger perspective
- * (the near edge looks longer than the far ones); very far looks flat. 4 gives a gentle perspective.
+ * (the near edge looks longer than the far ones); very far looks flat. 2.5 gives a strong perspective.
+ * It must stay above DEPTH_REACH, or the near clip plane would fall behind the camera.
  */
-const CAMERA_DISTANCE = 4;
+const CAMERA_DISTANCE = 2.5;
+/**
+ * Camera distance while the main view is shown flat: far enough to look orthographic. Up close,
+ * the enlarged near face would hide the axis triad's arms when they run along the far side.
+ */
+const FLAT_CAMERA_DISTANCE = 60;
+/** How quickly the cube eases between perspective and flat (per second). */
+const FLATTEN_RATE = 20;
 /** Depth either side of the cube's centre to draw: it covers the axis triad and its letters. */
 const DEPTH_REACH = 2;
 
 type CubeHudProps = {
 	/** Drawn in unit-cube units (the cube is 1 wide), centred on the origin. */
 	children: ReactNode;
+	/** Whether the main view is shown flat; the cube flattens to match. */
+	flat: boolean;
 };
 
 /**
  * Top-right overlay for the view cube. It's drawn on top of the scene with its own perspective
  * camera, so the cube looks solid rather than flat, and it's turned to match the main camera.
  */
-export function CubeHud({ children }: CubeHudProps) {
+export function CubeHud({ children, flat }: CubeHudProps) {
 	const mainCamera = useThree((s) => s.camera);
 	return (
 		<Hud>
-			<CubeView mainCamera={mainCamera}>{children}</CubeView>
+			<CubeView mainCamera={mainCamera} flat={flat}>
+				{children}
+			</CubeView>
 		</Hud>
 	);
 }
 
 function CubeView({
 	mainCamera,
+	flat,
 	children,
 }: CubeHudProps & { mainCamera: Camera }) {
 	const set = useThree((s) => s.set);
-	const [camera] = useState(() => {
-		const cam = new PerspectiveCamera();
-		cam.position.set(0, 0, CAMERA_DISTANCE);
-		cam.near = CAMERA_DISTANCE - DEPTH_REACH;
-		cam.far = CAMERA_DISTANCE + DEPTH_REACH;
-		return cam;
-	});
+	const [camera] = useState(() => new PerspectiveCamera());
 	// The overlay's picking and drawing use this camera, not the main one.
 	useLayoutEffect(() => set({ camera }), [set, camera]);
 	const turn = useRef<Group>(null);
+	/** 1 / camera distance: eased rather than the distance, so the change in perspective looks even. */
+	const strength = useRef(1 / CAMERA_DISTANCE);
 
-	useFrame(({ size: { width, height } }) => {
+	useFrame(({ size: { width, height } }, delta) => {
+		const target = 1 / (flat ? FLAT_CAMERA_DISTANCE : CAMERA_DISTANCE);
+		strength.current +=
+			(target - strength.current) * (1 - Math.exp(-delta * FLATTEN_RATE));
+		const distance = 1 / strength.current;
+		camera.position.set(0, 0, distance);
+		camera.near = distance - DEPTH_REACH;
+		camera.far = distance + DEPTH_REACH;
 		// A face seen head-on is CUBE_SIZE pixels across, as it was when the cube was drawn flat.
 		// (Sized at the cube's centre instead, the near face and its label would come out bigger.)
 		camera.fov =
 			2 *
-			Math.atan(height / 2 / (CUBE_SIZE * (CAMERA_DISTANCE - 0.5))) *
+			Math.atan(height / 2 / (CUBE_SIZE * (distance - 0.5))) *
 			MathUtils.RAD2DEG;
 		camera.aspect = width / height;
 		// Centre the lens on the cube rather than the canvas, so the cube is seen head-on

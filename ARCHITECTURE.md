@@ -98,7 +98,7 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 1. Add the name to the `Action` type and a binding to `KEYMAP` in `input/keymap.ts`. The first binding is the one shown in tooltips.
 2. Say what it does in `ACTIONS` in `input/actions.ts`. If it needs to reach something only a mounted `scene/` component can do (like turning the camera to a standard view), route it through a callback registration in `tools/` — see `tools/cameraViews.ts` (used by `scene/camera/ViewCube.tsx`) or `tools/exports.ts` (used by `scene/export/ViewExporter.tsx`).
 3. For a button, add an icon to `ACTION_ICONS` in `ui/icons.tsx` and an item to `ToolStrip` (model actions) or `ExportBar` (exports).
-4. Add a line to `SHORTCUT_SECTIONS` in `ui/shortcuts/shortcutList.ts` (the list "?" opens), under the right heading. Mouse gestures and in-context keys go there too, written out as `keys`.
+4. Add a line to `SHORTCUT_SECTIONS` in `ui/shortcuts/shortcutList.ts` (the list "?" opens), under the right heading. Modifier clicks, in-context keys and non-obvious gestures go there too, written out as `keys`; plain clicks and drags don't.
 
 **Add a multi-step interaction** (like the join wheel):
 1. Put its state type in `state/<name>.ts`, and add a field and setter to `state/store.ts`.

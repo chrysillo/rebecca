@@ -166,7 +166,7 @@ export function ViewCube() {
 	useEffect(() => registerLookFrom(lookFrom));
 
 	return (
-		<CubeHud>
+		<CubeHud flat={flatView !== null}>
 			<group rotation={[Math.PI / 2, 0, 0]}>
 				<FaceCube onPick={lookFrom} controls={controls} />
 			</group>
