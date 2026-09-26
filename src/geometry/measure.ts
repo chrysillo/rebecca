@@ -1,6 +1,7 @@
 import {
 	type Aabb,
 	type EdgeRef,
+	edgeEnds,
 	edgeMidpoint,
 	pieceAabb,
 	piecesAabb,
@@ -8,6 +9,7 @@ import {
 import {
 	AXES,
 	type Axis,
+	add,
 	dot,
 	scale,
 	sub,
@@ -22,14 +24,65 @@ export type Dimension = { start: Vec3; end: Vec3; distance: number };
 const length = (v: Vec3) => Math.sqrt(dot(v, v));
 
 /**
- * The straight (X, Y or Z) dimension from the middle of one edge to the second edge: along the
- * axis where they are furthest apart, ending level with the second edge's middle on that axis.
+ * The straight (X, Y or Z) dimension between two edges: along the axis where their middles are
+ * furthest apart, ending level with the second edge's middle on that axis. `at` slides it along
+ * the first edge (0 and 1 are its ends, 0.5 its middle), kept to where it still lies across both
+ * edges; the distance doesn't change.
  */
 export function measureEdges(
 	pieces: Record<Id, Piece>,
 	from: EdgeRef,
 	to: EdgeRef,
+	at = 0.5,
 ): Dimension | null {
+	const slide = measureSlide(pieces, from, to);
+	if (!slide) return null;
+	const { start, target, axis } = slide;
+	const shift = slide.dir
+		? scale(slide.dir, clamp(slide.length * (at - 0.5), slide.lo, slide.hi))
+		: vec3();
+	const end = { ...start, [axis]: target[axis] };
+	return {
+		start: add(start, shift),
+		end: add(end, shift),
+		distance: Math.abs(target[axis] - start[axis]),
+	};
+}
+
+/**
+ * Where along the first edge (0 to 1) a measurement lies when dragged to `point`, kept on both
+ * edges. Null when it can't slide (the edge runs the way it measures).
+ */
+export function measurementAt(
+	pieces: Record<Id, Piece>,
+	from: EdgeRef,
+	to: EdgeRef,
+	point: Vec3,
+): number | null {
+	const slide = measureSlide(pieces, from, to);
+	if (!slide?.dir) return null;
+	const s = clamp(dot(sub(point, slide.start), slide.dir), slide.lo, slide.hi);
+	return s / slide.length + 0.5;
+}
+
+/** Which way a measurement slides (square to its line), and how far (mm from the middle). */
+type Slide = {
+	start: Vec3;
+	target: Vec3;
+	axis: Axis;
+	/** Unit direction it slides in; null when the first edge runs along the measured axis. */
+	dir: Vec3 | null;
+	/** Length of the first edge in that direction. */
+	length: number;
+	lo: number;
+	hi: number;
+};
+
+function measureSlide(
+	pieces: Record<Id, Piece>,
+	from: EdgeRef,
+	to: EdgeRef,
+): Slide | null {
 	const a = pieces[from.pieceId];
 	const b = pieces[to.pieceId];
 	if (!a || !b) return null;
@@ -40,9 +93,24 @@ export function measureEdges(
 	const axis = AXES.reduce((m, ax) =>
 		Math.abs(gap[ax]) > Math.abs(gap[m]) ? ax : m,
 	);
-	const end = { ...start, [axis]: target[axis] };
-	return { start, end, distance: Math.abs(gap[axis]) };
+	// Slide along the first edge, less any part along the measured axis so the distance holds.
+	const [a0, a1] = edgeEnds(a, from);
+	const run = { ...sub(a1, a0), [axis]: 0 };
+	const length = Math.sqrt(dot(run, run));
+	if (length < 1e-6)
+		return { start, target, axis, dir: null, length: 0, lo: 0, hi: 0 };
+	const dir = scale(run, 1 / length);
+	// Keep to where it lies across both edges; if they don't overlap, just the first edge.
+	const [b0, b1] = edgeEnds(b, to).map((p) => dot(sub(p, start), dir));
+	const lo = Math.max(-length / 2, Math.min(b0, b1));
+	const hi = Math.min(length / 2, Math.max(b0, b1));
+	return lo <= hi
+		? { start, target, axis, dir, length, lo, hi }
+		: { start, target, axis, dir, length, lo: -length / 2, hi: length / 2 };
 }
+
+const clamp = (n: number, lo: number, hi: number) =>
+	Math.min(hi, Math.max(lo, n));
 
 /**
  * Live gaps while dragging along one world axis: from the moving pieces' box to the nearest

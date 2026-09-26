@@ -8,12 +8,13 @@ import {
 	Vector3,
 } from "three";
 import { HANDLE_HOVER_COLOR } from "@/colors";
-import { type FaceRef, faceCentre, faceNormal, sameFace } from "@/geometry/box";
-import { extrudableFaces } from "@/geometry/extrude";
-import type { Vec3 } from "@/geometry/vec";
-import type { Piece } from "@/model/types";
+import { type FaceRef, faceCentre, faceNormal } from "@/geometry/box";
+import { coplanarFaceGroups } from "@/geometry/extrude";
+import { add, scale, type Vec3 } from "@/geometry/vec";
 import { useExtrudeDrag } from "@/scene/extrude/useExtrudeDrag";
+import { SolidArrow } from "@/scene/shared/gizmoShapes";
 import {
+	DIM_OPACITY,
 	GIZMO_REACH,
 	GIZMO_RENDER_ORDER,
 	GIZMO_USER_DATA,
@@ -21,6 +22,7 @@ import {
 	HANDLE_HIT_RADIUS,
 } from "@/scene/shared/gizmoStyle";
 import { ScreenSizeGroup, screenScale } from "@/scene/shared/ScreenSizeGroup";
+import { useGizmoHover } from "@/scene/shared/useGizmoHover";
 import {
 	extrudePreview,
 	selectedPieces,
@@ -29,25 +31,25 @@ import {
 import { useAppStore } from "@/state/store";
 import { beginExtrude } from "@/tools/extrudeSession";
 
-/** Layout in gizmo units (~130 px): the least gap between face and handle, and the handle's size. */
-const GAP = 0.1;
-const HEAD_LENGTH = 0.09;
-const HEAD_RADIUS = 0.04;
+/** Layout in gizmo units (~130 px): the least gap between face and arrow, and the arrow's length. */
+const GAP = 0.07;
+const ARROW_LENGTH = 0.18;
+/** The stem that ties a pushed-out arrow back to its face. Faint, so it doesn't read as a gizmo axis. */
 const STEM_RADIUS = 0.006;
-/** Faint, so a stem crossing the gizmo doesn't read as one of its axes. */
 const STEM_OPACITY = 0.35;
 /** Furthest a handle is pushed out to clear the gizmo, and the step used to find that spot. */
 const MAX_OFFSET = 2.5;
 const OFFSET_STEP = 0.02;
-/** Violet: apart from the gizmo's red/green/blue axes, its white pivot dot and the teal measurements. */
-const HANDLE_COLOR = "#8b5cf6";
+/** Neutral grey: apart from the gizmo's axis colours and quieter than black. */
+const RESIZE_COLOR = "#737373";
 /** Above this |cos| between a face's normal and the view, it faces the camera and its handle hides. */
 const HEAD_ON = 0.9;
 
 /**
- * With one piece selected, a small arrow outside each face that can be extruded (a sheet's four
- * edges, a rail's two ends). Dragging one resizes the piece from that side, so the thin edge of a
- * sheet never has to be clicked. The piece stays selected afterwards. Handles keep clear of the
+ * A small arrow outside each face of the selection that can be extruded (a sheet's four edges, a
+ * rail's two ends). With several pieces selected, one arrow per plane that every piece has a face
+ * in, e.g. the tops of four legs. Dragging one resizes from that side, so the thin edge of a
+ * sheet never has to be clicked. The pieces stay selected afterwards. Handles keep clear of the
  * move/rotate gizmo, sliding further out along their face's normal when it's in the way.
  */
 export function ResizeHandles() {
@@ -57,22 +59,34 @@ export function ResizeHandles() {
 	const busy = useAppStore((s) => s.drag !== null || s.joiner !== null);
 	const preview = useMemo(() => extrudePreview(doc, extrude), [doc, extrude]);
 
-	const pieces = selectedPieces(doc);
-	if (tool !== "select" || busy || pieces.length !== 1) return null;
-	const piece = preview[pieces[0].id] ?? pieces[0];
-	// Where the gizmo sits before any extrude, so a dragged handle doesn't jump as the piece grows.
-	const gizmo = selectionPivot(pieces, doc.groupPivot);
+	const selected = selectedPieces(doc);
+	if (tool !== "select" || busy || selected.length === 0) return null;
+	const pieces = selected.map((p) => preview[p.id] ?? p);
+	// Where the gizmo sits before any extrude, so a dragged handle doesn't jump as the pieces grow.
+	const gizmo = selectionPivot(selected, doc.groupPivot);
 
-	return extrudableFaces(piece).map((face) => {
-		// While extruding, only the handle being dragged stays (E has its own feedback).
-		const dragged =
-			extrude?.choices.length === 0 && sameFace(extrude.faces[0], face);
-		if (extrude && !dragged) return null;
+	// While extruding, only the handle being dragged stays (E has its own feedback).
+	const groups = extrude
+		? extrude.choices.length === 0
+			? [extrude.faces]
+			: []
+		: coplanarFaceGroups(pieces).filter((group) =>
+				pieces.every((p) => group.some((f) => f.pieceId === p.id)),
+			);
+	return groups.map((faces) => {
+		const centres = faces.flatMap((f) => {
+			const piece = pieces.find((p) => p.id === f.pieceId);
+			return piece ? [faceCentre(piece, f)] : [];
+		});
+		const piece = pieces.find((p) => p.id === faces[0].pieceId);
+		if (!piece || centres.length < faces.length) return null;
+		// Keyed on the first face, which the drag keeps, so the dragged handle isn't remounted.
 		return (
 			<ResizeHandle
-				key={`${face.axis}${face.sign}`}
-				piece={piece}
-				face={face}
+				key={`${faces[0].pieceId}:${faces[0].axis}${faces[0].sign}`}
+				faces={faces}
+				centre={scale(centres.reduce(add), 1 / centres.length)}
+				normal={faceNormal(piece, faces[0].axis, faces[0].sign)}
 				gizmo={gizmo}
 			/>
 		);
@@ -80,25 +94,28 @@ export function ResizeHandles() {
 }
 
 function ResizeHandle({
-	piece,
-	face,
+	faces,
+	centre: c,
+	normal: n,
 	gizmo,
 }: {
-	piece: Piece;
-	face: FaceRef;
+	faces: FaceRef[];
+	/** Middle of the faces, where the handle's stem starts. */
+	centre: Vec3;
+	normal: Vec3;
 	gizmo: Vec3;
 }) {
-	const [hovered, setHovered] = useState(false);
+	const hover = useGizmoHover(
+		`resize:${faces[0].pieceId}:${faces[0].axis}${faces[0].sign}`,
+	);
 	const [headOn, setHeadOn] = useState(false);
 	const tip = useRef<Group>(null);
 	const stem = useRef<Group>(null);
 	const size = useThree((s) => s.size);
 	const { dragging, onPointerDown, onPointerUp } = useExtrudeDrag(() =>
-		beginExtrude([face]),
+		beginExtrude(faces),
 	);
 
-	const c = faceCentre(piece, face);
-	const n = faceNormal(piece, face.axis, face.sign);
 	const centre = new Vector3(c.x, c.y, c.z);
 	const normal = new Vector3(n.x, n.y, n.z);
 
@@ -113,6 +130,8 @@ function ResizeHandle({
 		const offset = clearOffset(camera, size, centre, normal, gizmo);
 		tip.current.position.y = offset;
 		stem.current.scale.y = offset;
+		// Only an arrow pushed out past the gizmo needs its stem.
+		stem.current.visible = offset > GAP + OFFSET_STEP / 2;
 	});
 	if (headOn) return null;
 
@@ -120,37 +139,44 @@ function ResizeHandle({
 		new Vector3(0, 1, 0),
 		normal,
 	);
-	const color = hovered || dragging ? HANDLE_HOVER_COLOR : HANDLE_COLOR;
+	const color = hover.hovered || dragging ? HANDLE_HOVER_COLOR : RESIZE_COLOR;
+	const opacity = hover.dim && !dragging ? DIM_OPACITY : 1;
 	return (
 		<ScreenSizeGroup position={c}>
 			<group quaternion={turn}>
 				{/* A thin stem ties a pushed-out handle back to its face. */}
 				<group ref={stem} scale={[1, GAP, 1]}>
-					<mesh position={[0, 0.5, 0]} renderOrder={GIZMO_RENDER_ORDER}>
+					<mesh position={[0, 0.5, 0]} renderOrder={GIZMO_RENDER_ORDER - 3}>
 						<cylinderGeometry args={[STEM_RADIUS, STEM_RADIUS, 1, 6]} />
 						<meshBasicMaterial
-							{...gizmoMaterialProps(color)}
-							opacity={STEM_OPACITY}
+							{...gizmoMaterialProps(RESIZE_COLOR)}
+							opacity={STEM_OPACITY * opacity}
 						/>
 					</mesh>
 				</group>
 				<group ref={tip} position={[0, GAP, 0]}>
+					<SolidArrow
+						from={[0, 0, 0]}
+						to={[0, ARROW_LENGTH, 0]}
+						color={color}
+						opacity={opacity}
+					/>
 					<mesh
-						position={[0, HEAD_LENGTH / 2, 0]}
-						renderOrder={GIZMO_RENDER_ORDER}
-					>
-						<coneGeometry args={[HEAD_RADIUS, HEAD_LENGTH, 16]} />
-						<meshBasicMaterial {...gizmoMaterialProps(color)} />
-					</mesh>
-					<mesh
-						position={[0, HEAD_LENGTH / 2, 0]}
+						position={[0, ARROW_LENGTH / 2, 0]}
 						userData={GIZMO_USER_DATA}
 						onPointerDown={onPointerDown}
 						onPointerUp={onPointerUp}
-						onPointerOver={() => setHovered(true)}
-						onPointerOut={() => setHovered(false)}
+						onPointerOver={hover.onPointerOver}
+						onPointerOut={hover.onPointerOut}
 					>
-						<sphereGeometry args={[HANDLE_HIT_RADIUS, 12, 8]} />
+						<cylinderGeometry
+							args={[
+								HANDLE_HIT_RADIUS,
+								HANDLE_HIT_RADIUS,
+								ARROW_LENGTH + HANDLE_HIT_RADIUS,
+								8,
+							]}
+						/>
 						<meshBasicMaterial
 							transparent
 							opacity={0}
@@ -192,7 +218,7 @@ function clearOffset(
 	const scale = screenScale(camera, centre);
 	for (let u = GAP; u < MAX_OFFSET; u += OFFSET_STEP) {
 		const at = toPixels(
-			centre.clone().addScaledVector(normal, (u + HEAD_LENGTH / 2) * scale),
+			centre.clone().addScaledVector(normal, (u + ARROW_LENGTH / 2) * scale),
 		);
 		if (Math.hypot(at.x - o.x, at.y - o.y) >= clear) return u;
 	}

@@ -28,7 +28,9 @@ export function PropertiesPanel() {
 	if (selected.length === 0) return null;
 	if (selected.length > 1)
 		return (
-			<Panel title={`${selected.length} pieces`}>
+			<Panel width="w-36" title={`${selected.length} pieces`}>
+				{/* TODO: truncate list or add a scroll when list too long cuz its
+				overflowing the page */}
 				<ul className="-mt-1 flex flex-col gap-0.5 text-xs text-neutral-700">
 					{selected.map((p) => (
 						<li key={p.id}>{p.name}</li>

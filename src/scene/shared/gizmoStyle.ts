@@ -1,11 +1,14 @@
 import { Euler, Matrix4, Vector3 } from "three";
 import type { Axis } from "@/geometry/vec";
 
-/** Radius (gizmo units; move arrows are 1 long) of the rotate handles and their guide circle. */
-export const ROTATE_RADIUS = 0.85;
+/** Radius (gizmo units, ~130 px each) of the rotate handles and their guide rings. */
+export const ROTATE_RADIUS = 0.8;
 
 /** How far the move/rotate gizmo reaches from its centre (gizmo units, arrow tips and grab areas included). */
-export const GIZMO_REACH = 1.1;
+export const GIZMO_REACH = 0.9;
+
+/** Opacity of every other handle while one is under the pointer, so the one you're about to grab stands out. */
+export const DIM_OPACITY = 0.3;
 
 /** Drawn after the scene and without depth testing, so gizmos are never hidden by pieces. */
 export const GIZMO_RENDER_ORDER = 1000;

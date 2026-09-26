@@ -6,6 +6,7 @@ import { intersectPlane, type Ray } from "@/geometry/rays";
 import { AXES, type Axis, sub, type Vec3 } from "@/geometry/vec";
 import { isHeld } from "@/input/modifiers";
 import type { Id, Piece } from "@/model/types";
+import { claimPress } from "@/scene/shared/pressClaim";
 import { toRay } from "@/scene/shared/useGizmoPointer";
 import { useOrbitControls } from "@/scene/shared/useOrbitControls";
 import { snapTargets } from "@/snapping/targets";
@@ -35,6 +36,7 @@ export function usePlaneDrag() {
 		if (e.button !== 0 || tool !== "select") return;
 		const pieces = selectedPieces(doc);
 		if (!pieces.some((p) => p.id === pieceId)) return;
+		claimPress(e.nativeEvent);
 
 		const normalAxis = dominantAxis(worldNormal);
 		const planeNormal = { x: 0, y: 0, z: 0, [normalAxis]: 1 } as Vec3;

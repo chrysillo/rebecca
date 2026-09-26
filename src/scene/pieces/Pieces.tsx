@@ -20,6 +20,8 @@ export function Pieces() {
 	const exporting = useAppStore((s) => s.exporting);
 	// The piece a right-click menu is open for stays lit; otherwise the one under the pointer.
 	const highlighted = useAppStore((s) => s.contextMenu?.pieceId ?? s.hovered);
+	// While a selection box is dragged, the pieces it would pick light up instead.
+	const boxHits = useAppStore((s) => s.boxSelect?.hits);
 	const items = useMemo((): Item[] => {
 		const shown = displayPieces(joinPreview(doc, joiner), drag, extrude);
 		if (!joiner) return shown;
@@ -46,7 +48,13 @@ export function Pieces() {
 			key={item.piece.id}
 			{...item}
 			selected={item.selected && !exporting}
-			hovered={item.piece.id === highlighted && !exporting && !drag}
+			hovered={
+				(boxHits
+					? boxHits.includes(item.piece.id)
+					: item.piece.id === highlighted) &&
+				!exporting &&
+				!drag
+			}
 		/>
 	));
 }

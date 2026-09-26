@@ -7,6 +7,7 @@ import {
 } from "@/geometry/measure";
 import { add, scale, sub, type Vec3 } from "@/geometry/vec";
 import { ScreenSizeGroup } from "@/scene/shared/ScreenSizeGroup";
+import { useHtmlPortal } from "@/scene/shared/useHtmlPortal";
 
 type Props = {
 	dimension: Dimension;
@@ -18,6 +19,8 @@ type Props = {
 	offset?: number;
 	/** Shows a × on the label that calls this. */
 	onRemove?: () => void;
+	/** Makes the label draggable: called when it's pressed. */
+	onGrab?: (e: React.PointerEvent) => void;
 };
 
 type Point = [number, number, number];
@@ -34,8 +37,10 @@ export function DimensionLine({
 	awayFrom,
 	offset = DIMENSION_OFFSET,
 	onRemove,
+	onGrab,
 }: Props) {
 	const { distance } = dimension;
+	const portal = useHtmlPortal();
 	// Like a drawing dimension: the line is lifted off the pieces by OFFSET_MM, with thin
 	// extension lines back to the measured points, so it never sits on top of an edge.
 	const along = sub(dimension.end, dimension.start);
@@ -95,9 +100,10 @@ export function DimensionLine({
 					</mesh>
 				</ScreenSizeGroup>
 			))}
-			<Html position={mid} center zIndexRange={[15, 5]}>
+			<Html position={mid} center zIndexRange={[15, 5]} portal={portal}>
 				<div
-					className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums whitespace-nowrap text-white shadow"
+					onPointerDown={onGrab}
+					className={`${onGrab ? "cursor-grab select-none active:cursor-grabbing " : ""}flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums whitespace-nowrap text-white shadow`}
 					style={{ background: color }}
 				>
 					{formatMm(distance)}
@@ -106,6 +112,7 @@ export function DimensionLine({
 							type="button"
 							aria-label="Remove measurement"
 							className="-mr-1 rounded-full px-1 leading-none text-white/70 hover:bg-white/20 hover:text-white"
+							onPointerDown={(e) => e.stopPropagation()}
 							onClick={onRemove}
 						>
 							×

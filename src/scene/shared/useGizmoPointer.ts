@@ -1,6 +1,7 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import type { Ray as ThreeRay } from "three";
 import type { Ray } from "@/geometry/rays";
+import { claimPress } from "@/scene/shared/pressClaim";
 import { useOrbitControls } from "@/scene/shared/useOrbitControls";
 
 export const toRay = (r: ThreeRay): Ray => ({
@@ -17,6 +18,7 @@ export function useGizmoPointer() {
 
 	const capture = (e: ThreeEvent<PointerEvent>) => {
 		e.stopPropagation();
+		claimPress(e.nativeEvent);
 		(e.target as Element).setPointerCapture(e.pointerId);
 		if (controls) controls.enabled = false;
 	};

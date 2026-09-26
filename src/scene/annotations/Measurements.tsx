@@ -10,12 +10,14 @@ import {
 } from "@/geometry/measure";
 import type { Id, Piece } from "@/model/types";
 import { DimensionLine } from "@/scene/annotations/DimensionLine";
+import { useMeasurementDrag } from "@/scene/annotations/useMeasurementDrag";
 import { applyCommand, useAppStore } from "@/state/store";
 
 const HOVER_COLOR = "#f59e0b";
 
 /**
- * Saved measurements (recomputed from the pieces every render, so they follow moves and resizes),
+ * Saved measurements (recomputed from the pieces every render, so they follow moves and resizes;
+ * drag a label to slide one along its edges),
  * plus the Measure tool's feedback: the edge under the pointer, the edge the next measurement
  * starts from, and a live dimension between them.
  */
@@ -24,30 +26,34 @@ export function Measurements() {
 	const pieces = useAppStore((s) => s.doc.pieces);
 	const start = useAppStore((s) => s.measureStart);
 	const hover = useAppStore((s) => s.measureHover);
+	const dragging = useAppStore((s) => s.measureDrag);
+	const startDrag = useMeasurementDrag();
 
 	const saved = useMemo(
 		() =>
 			Object.values(measurements).flatMap((m) => {
-				const dimension = measureEdges(pieces, m.from, m.to);
+				const at = dragging?.id === m.id ? dragging.at : m.at;
+				const dimension = measureEdges(pieces, m.from, m.to, at);
 				return dimension
-					? [{ id: m.id, dimension, awayFrom: piecesCentre(pieces, m) }]
+					? [{ m, dimension, awayFrom: piecesCentre(pieces, m) }]
 					: [];
 			}),
-		[measurements, pieces],
+		[measurements, pieces, dragging],
 	);
 	const levels = useMemo(() => stackDimensions(saved), [saved]);
 	const preview = start && hover ? measureEdges(pieces, start, hover) : null;
 
 	return (
 		<>
-			{saved.map(({ id, dimension, awayFrom }, i) => (
+			{saved.map(({ m, dimension, awayFrom }, i) => (
 				<DimensionLine
-					key={id}
+					key={m.id}
 					dimension={dimension}
 					awayFrom={awayFrom}
 					offset={DIMENSION_OFFSET * (1 + levels[i])}
 					color={MEASURE_COLOR}
-					onRemove={() => applyCommand(commands.removeMeasurement(id))}
+					onRemove={() => applyCommand(commands.removeMeasurement(m.id))}
+					onGrab={(e) => startDrag(e, m)}
 				/>
 			))}
 			{start && <EdgeLine pieces={pieces} edge={start} color={MEASURE_COLOR} />}

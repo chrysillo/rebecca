@@ -1,6 +1,10 @@
 import { commands } from "@/commands";
 import { type FaceRef, faceCentre, sameFace } from "@/geometry/box";
-import { extrudableDimension, extrudableFaces } from "@/geometry/extrude";
+import {
+	coplanarFaceGroups,
+	extrudableDimension,
+	extrudableFaces,
+} from "@/geometry/extrude";
 import { lastPointer } from "@/input/pointer";
 import { toScreen } from "@/input/screen";
 import type { PieceKind } from "@/model/types";
@@ -13,7 +17,8 @@ const store = () => useAppStore.getState();
 
 /**
  * E: start extruding the selected face(s) together. With whole pieces selected instead, the
- * extrudable face nearest the mouse moves (Tab picks another). Otherwise explains why not.
+ * extrudable face nearest the mouse moves, along with every selected face in its plane
+ * (Tab picks another). Otherwise explains why not.
  * Returns whether an extrude started.
  */
 export function startExtrude() {
@@ -32,10 +37,14 @@ export function startExtrude() {
 	return beginExtrude(faces);
 }
 
-/** Extrudes the selected pieces' face nearest the mouse; Tab then steps to the next nearest. */
+/**
+ * Extrudes the selected pieces' face nearest the mouse, with the other selected faces in its
+ * plane (so four legs' ends move as one). Tab then steps to the next nearest set.
+ */
 function startPieceExtrude() {
 	const { doc, showNotice } = store();
-	const faces = selectedPieces(doc).flatMap((piece) =>
+	const pieces = selectedPieces(doc);
+	const faces = pieces.flatMap((piece) =>
 		extrudableFaces(piece).map((face) => ({
 			face,
 			at: toScreen(faceCentre(piece, face)),
@@ -49,12 +58,32 @@ function startPieceExtrude() {
 		);
 		return false;
 	}
-	const choices = facesNearestPointer(faces, lastPointer());
-	return beginExtrude([choices[0]], choices);
+	const choices = groupsNearestFirst(
+		facesNearestPointer(faces, lastPointer()),
+		coplanarFaceGroups(pieces),
+	);
+	return beginExtrude(choices[0], choices);
+}
+
+/**
+ * The groups in the order their nearest face comes in `ranked`, each with that face last so it
+ * is the primary one (it follows the mouse and carries the readout).
+ */
+function groupsNearestFirst(
+	ranked: FaceRef[],
+	groups: FaceRef[][],
+): FaceRef[][] {
+	const seen = new Set<FaceRef[]>();
+	return ranked.flatMap((face) => {
+		const group = groups.find((g) => g.some((f) => sameFace(f, face)));
+		if (!group || seen.has(group)) return [];
+		seen.add(group);
+		return [[...group.filter((f) => !sameFace(f, face)), face]];
+	});
 }
 
 /** Starts an extrude of exactly these faces, e.g. from a resize handle. Returns false if one is fixed. */
-export function beginExtrude(faces: FaceRef[], choices: FaceRef[] = []) {
+export function beginExtrude(faces: FaceRef[], choices: FaceRef[][] = []) {
 	const { doc, setExtrude } = store();
 	const movable = faces.every((f) => {
 		const piece = doc.pieces[f.pieceId];
@@ -72,16 +101,17 @@ export function beginExtrude(faces: FaceRef[], choices: FaceRef[] = []) {
 	return true;
 }
 
-/** Tab / Shift+Tab: extrude the next (or previous) face of the piece instead, starting again from zero. */
+/** Tab / Shift+Tab: extrude the next (or previous) set of faces instead, starting again from zero. */
 function cycleFace(step: 1 | -1) {
 	const { extrude, setExtrude } = store();
 	if (!extrude || extrude.choices.length < 2) return;
 	const { choices } = extrude;
-	const at = choices.findIndex((f) => sameFace(f, primaryFace(extrude)));
+	const primary = primaryFace(extrude);
+	const at = choices.findIndex((g) => g.some((f) => sameFace(f, primary)));
 	const next = choices[(at + step + choices.length) % choices.length];
 	setExtrude({
 		...extrude,
-		faces: [next],
+		faces: next,
 		startParam: null,
 		distance: 0,
 		snapTarget: null,

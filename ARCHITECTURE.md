@@ -69,11 +69,12 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 | Folder | Holds |
 | --- | --- |
 | (root) | `Viewport`, `Floor`, `gizmoEvents` (gizmo handles win clicks over pieces) |
-| `shared/` | Plumbing for several folders: `ScreenSizeGroup`, `useGizmoPointer` / `toRay`, `useOrbitControls`, `gizmoStyle` |
+| `shared/` | Plumbing for several folders: `ScreenSizeGroup`, `useGizmoPointer` / `toRay`, `useOrbitControls`, `gizmoStyle`, `gizmoShapes` (the solid arrow, arc and disc every handle is drawn with), `useGizmoHover` (one hovered handle; the rest dim), `pressClaim` (anything that takes a left press claims it, so it doesn't also start a selection box) |
 | `pieces/` | Drawing and picking pieces: `Pieces`, `PieceMesh`, `pieceLook` (colours for each state), `materialTexture` (the pencil pattern for each sheet material), `pickEdge`, `usePlaneDrag` |
 | `gizmo/` | The move/rotate gizmo: `Gizmos` (entry), arrows, arcs, pivot handle, rotation guide and readout, drag hooks, `useCameraView` |
 | `extrude/` | Face highlight, face arrow, resize handles (with their shared `useExtrudeDrag`), extrude controller and readout |
-| `annotations/` | Lines and labels over the model: measurements, live gaps, `DimensionLine`, snap guide |
+| `select/` | `BoxSelectController`: turns an unclaimed left-drag into a selection box (drawn by `ui/BoxSelectRect`) |
+| `annotations/` | Lines and labels over the model: measurements (and `useMeasurementDrag`, sliding one by its label), live gaps, `DimensionLine`, snap guide |
 | `camera/` | `ViewCube` (camera moves) with its `FaceCube`, `AxisTriad` and `CubeHud` (the corner overlay with its own perspective camera), and `ScreenProjection` (shares the camera with the UI through `input/screen`) |
 | `export/` | `ViewExporter` (renders the views sheet), `drawDimensions` (its 2D dimension lines) |
 
@@ -84,7 +85,7 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 
 - **Panels and overlays:** one file each (`StockPanel`, `PropertiesPanel`, `ToolStrip`, `CreateWheel`, …), positioned in `App.tsx`.
 - **Reusable controls** live in `ui/components/` (`RadialMenu`, `NumberField`, `RenameField`). Panel chrome is `Panel`, and buttons that run actions use `IconButton` with an icon from `icons.tsx`.
-- **When a panel outgrows one file** it gets a folder, like `ui/outliner/`: `Outliner` holds the tree logic and `OutlinerRows` the row components.
+- **When a panel outgrows one file** it gets a folder, like `ui/outliner/` (`Outliner` holds the tree logic and `OutlinerRows` the row components) or `ui/shortcuts/` (the corner button, the dialog and the list it shows).
 
 ## Recipes
 
@@ -95,9 +96,9 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 
 **Add a keyboard shortcut or button:**
 1. Add the name to the `Action` type and a binding to `KEYMAP` in `input/keymap.ts`. The first binding is the one shown in tooltips.
-2. Say what it does in `ACTIONS` in `input/actions.ts`.
+2. Say what it does in `ACTIONS` in `input/actions.ts`. If it needs to reach something only a mounted `scene/` component can do (like turning the camera to a standard view), route it through a callback registration in `tools/` — see `tools/cameraViews.ts` (used by `scene/camera/ViewCube.tsx`) or `tools/exports.ts` (used by `scene/export/ViewExporter.tsx`).
 3. For a button, add an icon to `ACTION_ICONS` in `ui/icons.tsx` and an item to `ToolStrip` (model actions) or `ExportBar` (exports).
-4. If it's a mouse gesture rather than a key, add a line to `ui/KeyHints.tsx`.
+4. Add a line to `SHORTCUT_SECTIONS` in `ui/shortcuts/shortcutList.ts` (the list "?" opens), under the right heading. Mouse gestures and in-context keys go there too, written out as `keys`.
 
 **Add a multi-step interaction** (like the join wheel):
 1. Put its state type in `state/<name>.ts`, and add a field and setter to `state/store.ts`.
@@ -152,6 +153,6 @@ npm run typecheck && npm test && npm run check
 Places where the code breaks the rules above. Fix them when next working nearby, and delete the line once done.
 
 - `state/projects.ts` is an imperative flow (open, close and rename projects) rather than state, and it and `persistence/autosave.ts` import each other. It could move to `persistence/`.
-- `tools/` mixes sessions with pure drag maths. Split it into two folders if it grows much past its current 10 files.
+- `tools/` mixes sessions with pure drag maths, and has grown to 12 files (plus tests). Split it into two folders if it grows further.
 - Over ~250 lines: `state/projects.ts` (~315) and `ui/outliner/OutlinerRows.tsx` (~310). Both hang together well; split them if they grow.
 - No direct tests for `computeExtrude` in `tools/extrudeTool.ts`, `model/dimensions.ts` or `snapping/tolerance.ts`.

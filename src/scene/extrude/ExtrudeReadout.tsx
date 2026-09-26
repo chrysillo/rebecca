@@ -2,6 +2,7 @@ import { Html } from "@react-three/drei";
 import { useMemo } from "react";
 import { faceCentre } from "@/geometry/box";
 import { extrudableDimension } from "@/geometry/extrude";
+import { useHtmlPortal } from "@/scene/shared/useHtmlPortal";
 import { effectiveDistance, primaryFace } from "@/state/extrude";
 import { extrudePreview } from "@/state/selectors";
 import { useAppStore } from "@/state/store";
@@ -16,6 +17,7 @@ export function ExtrudeReadout() {
 	const doc = useAppStore((s) => s.doc);
 	const extrude = useAppStore((s) => s.extrude);
 	const preview = useMemo(() => extrudePreview(doc, extrude), [doc, extrude]);
+	const portal = useHtmlPortal();
 	const face = extrude ? primaryFace(extrude) : undefined;
 	const piece = face ? preview[face.pieceId] : undefined;
 	if (!extrude || !face || !piece) return null;
@@ -32,6 +34,7 @@ export function ExtrudeReadout() {
 			center
 			zIndexRange={[20, 10]}
 			style={{ pointerEvents: "none" }}
+			portal={portal}
 		>
 			<div className="flex translate-y-7 flex-col items-center gap-0.5 whitespace-nowrap">
 				<div className="rounded-md bg-neutral-900/85 px-2 py-0.5 text-xs font-semibold tabular-nums text-white shadow">

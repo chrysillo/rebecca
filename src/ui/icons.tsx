@@ -20,7 +20,7 @@ function Icon({ children }: { children: ReactNode }) {
 	);
 }
 
-/** Icons for the actions that have a button, in the tool strip or export bar (others are keyboard-only). */
+/** Icons for the actions that have a button (the tool strip, export bar and shortcuts button); others are keyboard-only. */
 export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 	// A box with a plus: add a piece.
 	newObject: (
@@ -77,6 +77,13 @@ export const ACTION_ICONS: Partial<Record<Action, ReactNode>> = {
 		<Icon>
 			<path d="M3 5 H21 V19 H3 Z" />
 			<path d="M3 16 L9 10 L14 15 L17 12 L21 16" />
+		</Icon>
+	),
+	// A keyboard: the list of shortcuts.
+	shortcuts: (
+		<Icon>
+			<path d="M3 6 H21 V18 H3 Z" />
+			<path d="M7 10 H7.01 M11 10 H11.01 M15 10 H15.01 M7 14 H7.01 M17 10 H17.01 M17 14 H17.01 M10 14 H14" />
 		</Icon>
 	),
 };

@@ -6,10 +6,12 @@ import {
 	GIZMO_RENDER_ORDER,
 	PLANE_ORIENTATION,
 } from "@/scene/shared/gizmoStyle";
+import { useHtmlPortal } from "@/scene/shared/useHtmlPortal";
 import { useAppStore } from "@/state/store";
 
-const WEDGE_RADIUS = 0.75;
-const LABEL_RADIUS = 1.05;
+/** Inside the guide ring (radius 0.8), with the label just outside it. */
+const WEDGE_RADIUS = 0.72;
+const LABEL_RADIUS = 1;
 
 /**
  * While a rotation arc is dragged: a translucent wedge sweeping the angle turned so far,
@@ -17,6 +19,7 @@ const LABEL_RADIUS = 1.05;
  */
 export function RotationReadout() {
 	const rotation = useAppStore((s) => s.drag?.rotation);
+	const portal = useHtmlPortal();
 	if (!rotation) return null;
 
 	const { axis, startAngle, degrees } = rotation;
@@ -49,6 +52,7 @@ export function RotationReadout() {
 				center
 				zIndexRange={[20, 10]}
 				style={{ pointerEvents: "none" }}
+				portal={portal}
 			>
 				<div className="rounded-md bg-neutral-900/85 px-2 py-0.5 text-xs font-semibold tabular-nums whitespace-nowrap text-white shadow">
 					{formatDegrees(degrees)}

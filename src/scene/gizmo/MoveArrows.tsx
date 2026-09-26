@@ -1,23 +1,32 @@
 import type { ThreeEvent } from "@react-three/fiber";
-import { useState } from "react";
 import { DoubleSide } from "three";
 import { AXIS_COLOR, HANDLE_HOVER_COLOR } from "@/colors";
-import { AXES, type Axis, type Vec3 } from "@/geometry/vec";
+import { AXES, type Axis, axisVector, type Vec3 } from "@/geometry/vec";
 import type { CameraView } from "@/scene/gizmo/useCameraView";
 import { useMoveDrag } from "@/scene/gizmo/useMoveDrag";
+import { SolidArrow } from "@/scene/shared/gizmoShapes";
 import {
-	GIZMO_RENDER_ORDER,
+	DIM_OPACITY,
 	GIZMO_USER_DATA,
-	gizmoMaterialProps,
 	HANDLE_HIT_RADIUS,
 } from "@/scene/shared/gizmoStyle";
+import { useGizmoHover } from "@/scene/shared/useGizmoHover";
 
-/** Arrow rotations: a cylinder points along +Y by default. */
+/** Arrow rotations for the hit cylinders: a cylinder points along +Y by default. */
 const ARROW_ROTATION: Record<Axis, [number, number, number]> = {
 	x: [0, 0, -Math.PI / 2],
 	y: [0, 0, 0],
 	z: [Math.PI / 2, 0, 0],
 };
+
+/**
+ * Arrow layout along its axis, in gizmo units. Short and clear of the rotate rings (radius 0.8);
+ * X is a little shorter, as it runs nearest the viewer in the default view.
+ */
+const START = 0.34;
+const TIP: Record<Axis, number> = { x: 0.76, y: 0.82, z: 0.82 };
+/** The grab area reaches a little past the arrow tip. */
+const HIT_PAST_TIP = 0.05;
 
 /**
  * X/Y/Z arrows. Dragging an arrow moves the selection along that axis. Like Shapr3D, each arrow
@@ -32,7 +41,6 @@ export function MoveArrows({
 	origin: Vec3;
 	view: CameraView;
 }) {
-	const [hovered, setHovered] = useState<Axis | null>(null);
 	const drag = useMoveDrag(origin);
 
 	return (
@@ -41,78 +49,61 @@ export function MoveArrows({
 				<Arrow
 					key={axis}
 					axis={axis}
-					color={hovered === axis ? HANDLE_HOVER_COLOR : AXIS_COLOR[axis]}
 					onPointerDown={drag.onPointerDown(axis)}
 					onPointerMove={drag.onPointerMove}
 					onPointerUp={drag.onPointerUp}
-					onPointerOver={() => setHovered(axis)}
-					onPointerOut={() => setHovered(null)}
 				/>
 			))}
 		</group>
 	);
 }
 
-type HandleProps = {
-	axis: Axis;
-	color: string;
+type HandleEvents = {
 	onPointerDown: (e: ThreeEvent<PointerEvent>) => void;
 	onPointerMove: (e: ThreeEvent<PointerEvent>) => void;
 	onPointerUp: (e: ThreeEvent<PointerEvent>) => void;
-	onPointerOver: () => void;
-	onPointerOut: () => void;
 };
 
-/** Arrow layout along its axis, in gizmo units (1 = full gizmo size). */
-/** Shafts start well out from the centre, leaving room for the pivot dot and rotate arcs. */
-const SHAFT_START = 0.45;
-const SHAFT_END = 0.86;
-const HEAD_LENGTH = 0.14;
-/** The grab area reaches a little past the arrow tip. */
-const HIT_END = 1.08;
-
-/** One slim arrow, drawn on top of everything, with a fatter invisible hit area. */
-function Arrow({ axis, color, ...events }: HandleProps) {
-	const shaft = SHAFT_END - SHAFT_START;
+/** One solid arrow with a fatter invisible hit area. */
+function Arrow({ axis, ...events }: HandleEvents & { axis: Axis }) {
+	const hover = useGizmoHover(`move:${axis}`);
+	const dir = axisVector(axis);
+	const at = (r: number): [number, number, number] => [
+		dir.x * r,
+		dir.y * r,
+		dir.z * r,
+	];
+	const hitEnd = TIP[axis] + HIT_PAST_TIP;
 	return (
-		<group rotation={ARROW_ROTATION[axis]}>
-			<mesh
-				position={[0, SHAFT_START + shaft / 2, 0]}
-				renderOrder={GIZMO_RENDER_ORDER}
-			>
-				<cylinderGeometry args={[0.008, 0.008, shaft, 8]} />
-				<meshBasicMaterial {...gizmoMaterialProps(color)} />
-			</mesh>
-			<mesh
-				position={[0, SHAFT_END + HEAD_LENGTH / 2, 0]}
-				renderOrder={GIZMO_RENDER_ORDER}
-			>
-				<coneGeometry args={[0.038, HEAD_LENGTH, 20]} />
-				<meshBasicMaterial {...gizmoMaterialProps(color)} />
-			</mesh>
-			<mesh
-				position={[0, (SHAFT_START + HIT_END) / 2, 0]}
-				userData={GIZMO_USER_DATA}
-				{...events}
-			>
-				<cylinderGeometry
-					args={[
-						HANDLE_HIT_RADIUS,
-						HANDLE_HIT_RADIUS,
-						HIT_END - SHAFT_START,
-						8,
-					]}
-				/>
-				{/* Double-sided: the arrows sit in a mirrored group, which flips winding for raycasts. */}
-				<meshBasicMaterial
-					transparent
-					opacity={0}
-					depthWrite={false}
-					side={DoubleSide}
-				/>
-			</mesh>
-		</group>
+		<>
+			<SolidArrow
+				from={at(START)}
+				to={at(TIP[axis])}
+				color={hover.hovered ? HANDLE_HOVER_COLOR : AXIS_COLOR[axis]}
+				opacity={hover.dim ? DIM_OPACITY : 1}
+			/>
+			<group rotation={ARROW_ROTATION[axis]}>
+				<mesh
+					position={[0, (START + hitEnd) / 2, 0]}
+					userData={GIZMO_USER_DATA}
+					onPointerOver={hover.onPointerOver}
+					onPointerOut={hover.onPointerOut}
+					{...events}
+				>
+					<cylinderGeometry
+						args={[HANDLE_HIT_RADIUS, HANDLE_HIT_RADIUS, hitEnd - START, 8]}
+					/>
+					{/* Double-sided: the arrows sit in a mirrored group, which flips winding for raycasts. */}
+					<meshBasicMaterial
+						transparent
+						opacity={0}
+						depthWrite={false}
+						side={DoubleSide}
+					/>
+				</mesh>
+			</group>
+		</>
 	);
 }
 
-export type { HandleProps };
+export type { HandleEvents };

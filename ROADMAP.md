@@ -8,16 +8,17 @@ What the modeller is for, what's built, and what's next. Update it when a featur
 
 - Sheets and timber from project stock sizes. Editing a stock size resizes every piece cut from it. The create wheel (R) has one slice per stock entry.
 - Sheet stock has a material (Plywood, OSB, or any name typed under "Other…"), so same-thickness sheets stay separate in the create wheel, object list and cut list. Each material has its own tint and faint pencil pattern (ply grain, OSB strands, MDF stipple, hatching for anything else) in the 3D view.
-- Select pieces or faces (Shift+click adds), plus groups (Alt+click reaches inside one).
-- Move and rotate gizmo with snapping, and a fine mode (1 mm / 5°). Seven rotation pivots, picked by dragging the white dot.
+- Select pieces or faces (Shift+click adds), plus groups (Alt+click reaches inside one). Drag from empty space for a selection box that picks anything it touches (Shift adds, Alt reaches inside groups).
+- Move and rotate gizmo with snapping, and a fine mode (1 mm / 5°). Seven rotation pivots, picked by dragging the white dot. All handles (gizmo, resize arrows, face arrow) share one look: solid arrows on a white body, grey tick-marked guide rings, and the other handles dim while one is hovered.
 - Drag a selected piece across the plane of the face you grabbed.
-- Extrude one or more faces together (E). With a whole piece selected, E extrudes the face nearest the mouse and Tab picks another. A single selected piece also shows a resize arrow off each extrudable face (a sheet's edges, a rail's ends).
+- Extrude one or more faces together (E). With whole pieces selected, E extrudes the face nearest the mouse, along with every selected piece's face in the same plane, and Tab picks another. Selected pieces also show a resize arrow off each extrudable face (a sheet's edges, a rail's ends); with several selected, one arrow per plane they all share (e.g. the tops of four legs).
 - Joinery (J): pick which of two overlapping pieces gets cut. Cuts are live-linked, so they follow the cutting piece.
-- Measurements between edges, and live gap dimensions while dragging.
+- Measurements between edges (drag the label to slide one along its edges), and live gap dimensions while dragging.
 - Object list grouped by stock and identical cuts. Right-click context menu.
 - Exports: the cut list to the clipboard, and a PNG sheet of the Top, Right, Left and Perspective views with dimensions.
 - Projects autosave to `projects/*.json`, with VS Code-style tabs.
 - Icon-only tool strip with tooltips, and a view cube.
+- Every shortcut and mouse gesture in one scrolling list, opened with ? or the keyboard button in the bottom-left corner.
 
 ## Next
 

@@ -90,8 +90,11 @@ function show(name: string, session: Session) {
 		extrude: null,
 		creator: null,
 		joiner: null,
+		boxSelect: null,
 		measureStart: null,
 		measureHover: null,
+		measureDrag: null,
+		gizmoHover: null,
 	});
 	useProjectsStore.setState({ active: name });
 	markSaved(session.doc);

@@ -4,6 +4,7 @@ import {
 	axisGaps,
 	formatMm,
 	measureEdges,
+	measurementAt,
 	stackDimensions,
 } from "@/geometry/measure";
 import { vec3 } from "@/geometry/vec";
@@ -69,6 +70,57 @@ describe("measureEdges", () => {
 
 	it("gives nothing if a piece has been deleted", () => {
 		expect(measureEdges({ a }, topOfEnd("a", 1), topOfEnd("b", -1))).toBeNull();
+	});
+
+	it("slides along the edges without changing the distance", () => {
+		const d = measureEdges(pieces, topOfEnd("a", 1), topOfEnd("b", -1), 0);
+		expect(d?.start).toEqual(vec3(1000, 0, 63));
+		expect(d?.end).toEqual(vec3(1450, 0, 63));
+		expect(d?.distance).toBeCloseTo(450);
+		expect(
+			measureEdges(pieces, topOfEnd("a", 1), topOfEnd("b", -1), 1)?.start,
+		).toEqual(vec3(1000, 38, 63));
+	});
+
+	it("keeps to where it lies across both edges", () => {
+		const shifted = { a, c: rail({ id: "c", position: vec3(1950, 39, 31.5) }) }; // y 20..58
+		const d = measureEdges(shifted, topOfEnd("a", 1), topOfEnd("c", -1), 0);
+		expect(d?.start.y).toBeCloseTo(20);
+	});
+});
+
+describe("measurementAt (dragging a measurement)", () => {
+	it("finds where along the first edge the pointer is", () => {
+		const at = measurementAt(
+			pieces,
+			topOfEnd("a", 1),
+			topOfEnd("b", -1),
+			vec3(1200, 28.5, 200),
+		);
+		expect(at).toBeCloseTo(0.75);
+	});
+
+	it("stops at the ends of the edges", () => {
+		expect(
+			measurementAt(
+				pieces,
+				topOfEnd("a", 1),
+				topOfEnd("b", -1),
+				vec3(0, 500, 0),
+			),
+		).toBeCloseTo(1);
+	});
+
+	it("can't slide an edge that runs the way it measures", () => {
+		const along = {
+			pieceId: "a",
+			axis: "x" as const,
+			u: 1 as const,
+			v: 1 as const,
+		};
+		expect(
+			measurementAt(pieces, along, topOfEnd("b", -1), vec3(1200, 30, 63)),
+		).toBeNull();
 	});
 });
 

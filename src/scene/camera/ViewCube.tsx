@@ -7,6 +7,7 @@ import { CubeHud } from "@/scene/camera/CubeHud";
 import { FaceCube } from "@/scene/camera/FaceCube";
 import { useOrbitControls } from "@/scene/shared/useOrbitControls";
 import { useAppStore } from "@/state/store";
+import { registerLookFrom } from "@/tools/cameraViews";
 
 /**
  * Standard views look orthographic: the camera narrows to this field of view and backs off so the
@@ -159,6 +160,10 @@ export function ViewCube() {
 			t: 0,
 		};
 	};
+
+	// Registered every render (like the `onChange` listener above) so the `1`–`4` shortcuts
+	// always reach the current closure over `controls` and the animation/flat refs.
+	useEffect(() => registerLookFrom(lookFrom));
 
 	return (
 		<CubeHud>

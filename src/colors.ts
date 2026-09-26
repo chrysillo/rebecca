@@ -31,11 +31,11 @@ export function stockColor(stock: Stock): string {
 	return `hsl(${materialHash(stock.material) % 360}, 30%, 68%)`;
 }
 
-/** Gizmo arrows and arcs: softer axis colours, Shapr3D style. */
+/** Gizmo arrows, arcs and axis hairlines: muted axis colours, matching the view cube. */
 export const AXIS_COLOR: Record<Axis, string> = {
-	x: "#e5484d",
-	y: "#30a46c",
-	z: "#3e63dd",
+	x: "#da534f",
+	y: "#3b9555",
+	z: "#2b7ec9",
 };
 
 /** The floor's axis lines and the view cube's axis stubs: paler than the gizmo, so they recede. */

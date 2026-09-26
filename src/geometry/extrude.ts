@@ -1,6 +1,14 @@
-import { type FaceRef, faceNormal } from "@/geometry/box";
+import { type FaceRef, faceCentre, faceNormal } from "@/geometry/box";
 import { clampToFloor, lowestZ } from "@/geometry/floor";
-import { AXES, add, roundMm, roundVec, scale } from "@/geometry/vec";
+import {
+	AXES,
+	add,
+	dot,
+	roundMm,
+	roundVec,
+	scale,
+	type Vec3,
+} from "@/geometry/vec";
 import {
 	dimensionAlong,
 	type EditableDimension,
@@ -10,6 +18,10 @@ import type { Id, Piece } from "@/model/types";
 
 /** Extruding can shrink a piece, but never below this. */
 const MIN_DIMENSION = 1;
+/** How far apart (mm) two faces' planes may be and still extrude together. */
+const PLANE_TOLERANCE = 0.05;
+/** How closely two faces must point the same way (cosine of the angle between them). */
+const PARALLEL_COS = 1 - 1e-6;
 
 /** The dimension a face extrudes, or null when that dimension is fixed (e.g. sheet thickness). */
 export function extrudableDimension(
@@ -25,6 +37,28 @@ export function extrudableFaces(piece: Piece): FaceRef[] {
 	return AXES.flatMap((axis) =>
 		([-1, 1] as const).map((sign) => ({ pieceId: piece.id, axis, sign })),
 	).filter((face) => extrudableDimension(piece, face));
+}
+
+/**
+ * The pieces' extrudable faces, grouped so faces lying in one plane and pointing the same way
+ * (e.g. the top ends of four legs) extrude together. Groups and the faces in them keep the
+ * pieces' order.
+ */
+export function coplanarFaceGroups(pieces: Piece[]): FaceRef[][] {
+	const groups: { normal: Vec3; offset: number; faces: FaceRef[] }[] = [];
+	for (const piece of pieces)
+		for (const face of extrudableFaces(piece)) {
+			const normal = faceNormal(piece, face.axis, face.sign);
+			const offset = dot(normal, faceCentre(piece, face));
+			const group = groups.find(
+				(g) =>
+					dot(g.normal, normal) > PARALLEL_COS &&
+					Math.abs(g.offset - offset) < PLANE_TOLERANCE,
+			);
+			if (group) group.faces.push(face);
+			else groups.push({ normal, offset, faces: [face] });
+		}
+	return groups.map((g) => g.faces);
 }
 
 /**

@@ -17,6 +17,7 @@ import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/gizmo/Gizmos";
 import { gizmoFirstEvents } from "@/scene/gizmoEvents";
 import { Pieces } from "@/scene/pieces/Pieces";
+import { BoxSelectController } from "@/scene/select/BoxSelectController";
 import { applyCommand, useAppStore } from "@/state/store";
 import { cancelMeasure } from "@/tools/measureSession";
 
@@ -62,6 +63,7 @@ export function Viewport() {
 			<Pieces />
 			<ScreenProjection />
 			<ExtrudeController />
+			<BoxSelectController />
 			<ViewExporter />
 			{/* Hidden, not unmounted, while exporting: unmounting the HTML labels mid-render breaks them. */}
 			<group visible={!exporting}>

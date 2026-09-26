@@ -1,20 +1,26 @@
 import { Billboard } from "@react-three/drei";
 import { type ThreeEvent, useThree } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { type Vector2, Vector3 } from "three";
 import { SELECTION_COLOR } from "@/colors";
 import { PIVOTS, selectionPivotPoint } from "@/geometry/pivot";
 import type { Piece, Pivot } from "@/model/types";
+import { GizmoDisc } from "@/scene/shared/gizmoShapes";
 import {
+	DIM_OPACITY,
 	GIZMO_RENDER_ORDER,
 	GIZMO_USER_DATA,
 	gizmoMaterialProps,
 } from "@/scene/shared/gizmoStyle";
 import { ScreenSizeGroup } from "@/scene/shared/ScreenSizeGroup";
+import { useGizmoHover } from "@/scene/shared/useGizmoHover";
 import { useGizmoPointer } from "@/scene/shared/useGizmoPointer";
 
-/** The draggable pivot dot. */
-const DOT_COLOR = "#ffffff";
+/** The draggable pivot dot: a white disc with a dark centre that turns amber under the pointer. */
+const DISC_RADIUS = 0.055;
+const DOT_RADIUS = 0.021;
+const DOT_COLOR = "#262626";
+const DOT_HOVER_COLOR = "#f59e0b";
 /** Pivot targets shown while dragging the dot; the one it will snap to uses the selection colour. */
 const TARGET_COLOR = "#6b7280";
 
@@ -30,14 +36,14 @@ type Props = {
 };
 
 /**
- * The white dot at the gizmo's centre. Drag it and it snaps to whichever of the selection's
+ * The dot at the gizmo's centre. Drag it and it snaps to whichever of the selection's
  * pivots (centre, and top/middle/bottom of each end) is nearest the mouse on screen; releasing makes that the rotation pivot (one undo step).
  */
 export function PivotHandle({ pieces, current, onPreview, onCommit }: Props) {
 	const camera = useThree((s) => s.camera);
 	const pointer = useGizmoPointer();
 	const snapped = useRef<Pivot | null>(null);
-	const [hovered, setHovered] = useState(false);
+	const hover = useGizmoHover("pivot");
 
 	const nearestPivot = (ndc: Vector2): Pivot => {
 		let best: Pivot = current;
@@ -77,17 +83,19 @@ export function PivotHandle({ pieces, current, onPreview, onCommit }: Props) {
 
 	return (
 		<group>
-			<mesh renderOrder={GIZMO_RENDER_ORDER}>
-				<sphereGeometry args={[hovered ? 0.04 : 0.032, 16, 12]} />
-				<meshBasicMaterial {...gizmoMaterialProps(DOT_COLOR)} />
-			</mesh>
+			<GizmoDisc
+				radius={DISC_RADIUS}
+				dotRadius={DOT_RADIUS}
+				color={hover.hovered ? DOT_HOVER_COLOR : DOT_COLOR}
+				opacity={hover.dim ? DIM_OPACITY : 1}
+			/>
 			<mesh
 				userData={GIZMO_USER_DATA}
 				onPointerDown={onPointerDown}
 				onPointerMove={onPointerMove}
 				onPointerUp={onPointerUp}
-				onPointerOver={() => setHovered(true)}
-				onPointerOut={() => setHovered(false)}
+				onPointerOver={hover.onPointerOver}
+				onPointerOut={hover.onPointerOut}
 			>
 				<sphereGeometry args={[0.08, 12, 8]} />
 				<meshBasicMaterial transparent opacity={0} depthWrite={false} />

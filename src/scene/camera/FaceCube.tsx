@@ -1,9 +1,11 @@
 import type { ThreeEvent } from "@react-three/fiber";
 import { useEffect, useMemo, useState } from "react";
-import { CanvasTexture, Vector3 } from "three";
+import { CanvasTexture, type Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import type { OrbitControls } from "three-stdlib";
 import { SELECTION_COLOR } from "@/colors";
+import { claimPress } from "@/scene/shared/pressClaim";
+import { FACES } from "@/tools/cameraViews";
 
 /** Chamfer size and smoothness, in units of the cube's unit-box geometry. */
 const BEVEL_RADIUS = 0.09;
@@ -37,19 +39,9 @@ const LABEL_FONT = labelFont(LABEL_SIZE);
 /** Widest a label may be, as a share of the flat face, so long names like "BOTTOM" stay inside it. */
 const LABEL_MAX_WIDTH = 0.82;
 
-/**
- * Faces in BoxGeometry material order (+X, -X, +Y, -Y, +Z, -Z of the cube mesh), with the
- * world direction the camera moves to. The cube is turned +90° about X so its +Y is our +Z (up).
- * Looking straight down/up is singular for orbit controls, so Top/Bottom lean a hair toward Front.
- */
-const FACES = [
-	{ label: "Right", view: new Vector3(1, 0, 0) },
-	{ label: "Left", view: new Vector3(-1, 0, 0) },
-	{ label: "Top", view: new Vector3(0, -1e-4, 1).normalize() },
-	{ label: "Bottom", view: new Vector3(0, -1e-4, -1).normalize() },
-	{ label: "Front", view: new Vector3(0, -1, 0) },
-	{ label: "Back", view: new Vector3(0, 1, 0) },
-] as const;
+// FACES (in `tools/cameraViews`, shared with the keyboard shortcuts) lists the cube's faces
+// in BoxGeometry material order (+X, -X, +Y, -Y, +Z, -Z), with the world direction the camera
+// moves to. The cube is turned +90° about X so its +Y is our +Z (up).
 
 type FaceCubeProps = {
 	onPick: (view: Vector3) => void;
@@ -96,8 +88,9 @@ export function FaceCube({ onPick, controls }: FaceCubeProps) {
 				setHovered(faceOf(e));
 			}}
 			onPointerDown={(e) => {
-				// Stop the press on the cube from also starting a camera pan.
+				// Stop the press on the cube from also starting a camera pan or a selection box.
 				e.stopPropagation();
+				claimPress(e.nativeEvent);
 				if (controls) controls.enabled = false;
 			}}
 			onPointerUp={() => {

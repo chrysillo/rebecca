@@ -201,14 +201,35 @@ describe("extruding a whole piece (E with no face selected)", () => {
 		const first = useAppStore.getState().extrude;
 		expect(first?.faces).toHaveLength(1);
 		expect(first?.choices).toHaveLength(4);
-		expect(first?.choices.every((f) => f.axis !== "z")).toBe(true);
+		expect(first?.choices.flat().every((f) => f.axis !== "z")).toBe(true);
 
-		const faceNow = () => useAppStore.getState().extrude?.faces[0];
+		const facesNow = () => useAppStore.getState().extrude?.faces;
 		expect(key("Tab")).toBe(true);
-		expect(faceNow()).toEqual(first?.choices[1]);
+		expect(facesNow()).toEqual(first?.choices[1]);
 		key("Tab", true);
 		key("Tab", true);
-		expect(faceNow()).toEqual(first?.choices[3]);
+		expect(facesNow()).toEqual(first?.choices[3]);
+	});
+
+	it("moves every selected piece's face in the same plane together", () => {
+		const other = rail({ id: "other", position: { x: 500, y: 219, z: 31.5 } });
+		useAppStore.setState({
+			doc: { ...docWith([rail(), other]), selection: ["rail", "other"] },
+		});
+		startExtrude();
+		const { extrude } = useAppStore.getState();
+		// Two rails side by side: their near ends share a plane, as do their far ends.
+		expect(extrude?.choices).toHaveLength(2);
+		expect(extrude?.faces.map((f) => f.pieceId).sort()).toEqual([
+			"other",
+			"rail",
+		]);
+		key("2");
+		key("0");
+		confirmExtrude();
+		const { doc } = useAppStore.getState();
+		expect(doc.pieces.rail.length).toBe(1020);
+		expect(doc.pieces.other.length).toBe(1020);
 	});
 
 	it("resizes the piece in one undo step and keeps it selected", () => {

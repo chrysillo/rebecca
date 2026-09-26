@@ -25,7 +25,7 @@ export function drawMeasurements(
 ) {
 	const byId = Object.fromEntries(pieces.map((p) => [p.id, p]));
 	for (const m of measurements) {
-		const d = measureEdges(byId, m.from, m.to);
+		const d = measureEdges(byId, m.from, m.to, m.at);
 		if (!d || d.distance <= 0) continue;
 		const lift = dimensionOffsetDirection(sub(d.end, d.start), d.start);
 		const lifted: Dimension = {

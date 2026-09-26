@@ -207,6 +207,18 @@ describe("measurements", () => {
 		).toHaveLength(0);
 	});
 
+	it("slides a measurement along its edges", () => {
+		const doc = commands.addMeasurement(
+			xEnd("a"),
+			xStart("b"),
+		)(docWith([rail({ id: "a" }), rail({ id: "b" })]));
+		const [m] = Object.values(doc.measurements);
+		expect(m.at).toBe(0.5);
+		const moved = commands.moveMeasurement(m.id, 0.2)(doc);
+		expect(moved.measurements[m.id].at).toBe(0.2);
+		expect(commands.moveMeasurement(m.id, 0.2)(moved)).toBe(moved);
+	});
+
 	it("ignores measuring an edge against itself", () => {
 		const doc = docWith([rail({ id: "a" })]);
 		expect(commands.addMeasurement(xEnd("a"), xEnd("a"))(doc)).toBe(doc);
