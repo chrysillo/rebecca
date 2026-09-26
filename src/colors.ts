@@ -1,5 +1,5 @@
 import type { Axis } from "@/geometry/vec";
-import type { Stock } from "@/model/stock";
+import { materialHash, type Stock } from "@/model/stock";
 import type { PieceKind } from "@/model/types";
 
 /**
@@ -28,9 +28,7 @@ export function stockColor(stock: Stock): string {
 	if (stock.kind !== "sheet") return WOOD_COLOR[stock.kind];
 	const known = MATERIAL_COLOR[stock.material];
 	if (known) return known;
-	let hash = 0;
-	for (const ch of stock.material) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
-	return `hsl(${hash % 360}, 30%, 68%)`;
+	return `hsl(${materialHash(stock.material) % 360}, 30%, 68%)`;
 }
 
 /** Gizmo arrows and arcs: softer axis colours, Shapr3D style. */

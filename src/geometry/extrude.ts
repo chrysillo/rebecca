@@ -1,6 +1,6 @@
 import { type FaceRef, faceNormal } from "@/geometry/box";
 import { clampToFloor, lowestZ } from "@/geometry/floor";
-import { add, roundMm, roundVec, scale } from "@/geometry/vec";
+import { AXES, add, roundMm, roundVec, scale } from "@/geometry/vec";
 import {
 	dimensionAlong,
 	type EditableDimension,
@@ -18,6 +18,13 @@ export function extrudableDimension(
 ): EditableDimension | null {
 	const key = dimensionAlong(piece.kind, face.axis);
 	return isEditableDimension(piece.kind, key) ? key : null;
+}
+
+/** Every face of the piece that can be extruded: a sheet's four edges, a rail's two ends. */
+export function extrudableFaces(piece: Piece): FaceRef[] {
+	return AXES.flatMap((axis) =>
+		([-1, 1] as const).map((sign) => ({ pieceId: piece.id, axis, sign })),
+	).filter((face) => extrudableDimension(piece, face));
 }
 
 /**

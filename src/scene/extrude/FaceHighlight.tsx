@@ -7,13 +7,17 @@ import type { Piece } from "@/model/types";
 import { extrudePreview } from "@/state/selectors";
 import { useAppStore } from "@/state/store";
 
-/** Tints and outlines every selected face (following them while they are extruded). */
+/**
+ * Tints and outlines every selected face, or while extruding the faces that move (following them),
+ * which may be a face of a whole selected piece.
+ */
 export function FaceHighlight() {
 	const doc = useAppStore((s) => s.doc);
 	const extrude = useAppStore((s) => s.extrude);
 	const preview = useMemo(() => extrudePreview(doc, extrude), [doc, extrude]);
 
-	return doc.selectedFaces.map((face) => {
+	const faces = extrude ? extrude.faces : doc.selectedFaces;
+	return faces.map((face) => {
 		const piece = preview[face.pieceId] ?? doc.pieces[face.pieceId];
 		return piece ? (
 			<FaceTint

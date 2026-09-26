@@ -540,12 +540,53 @@
 				"z": -90
 			},
 			"pivot": "centre"
+		},
+		"5e7cc7ff-9b6e-450b-ab57-2bd55db50c88": {
+			"id": "5e7cc7ff-9b6e-450b-ab57-2bd55db50c88",
+			"name": "Sheet 1",
+			"kind": "sheet",
+			"stockId": "11738a7b-ea1b-4801-a486-e00d56ab051f",
+			"thickness": 18,
+			"length": 600,
+			"width": 800,
+			"position": {
+				"x": 730,
+				"y": -362,
+				"z": 631
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"pivot": "centre"
+		},
+		"4712e4ea-00b5-41ef-b540-36fc42dfdd7b": {
+			"id": "4712e4ea-00b5-41ef-b540-36fc42dfdd7b",
+			"name": "Sheet 3",
+			"kind": "sheet",
+			"stockId": "859ae745-a5ca-489d-8344-420af7319604",
+			"thickness": 18,
+			"length": 738,
+			"width": 800,
+			"position": {
+				"x": 1361,
+				"y": -362,
+				"z": 334
+			},
+			"rotation": {
+				"x": 0,
+				"y": 0,
+				"z": 0
+			},
+			"pivot": "centre"
 		}
 	},
 	"stock": {
 		"11738a7b-ea1b-4801-a486-e00d56ab051f": {
 			"id": "11738a7b-ea1b-4801-a486-e00d56ab051f",
 			"kind": "sheet",
+			"material": "Plywood",
 			"thickness": 18
 		},
 		"adf3bd30-a638-4b47-8d9d-7866b3804054": {
@@ -553,6 +594,18 @@
 			"kind": "framing",
 			"width": 38,
 			"depth": 63
+		},
+		"29fad448-5d89-46b5-a457-43e8f69f2800": {
+			"id": "29fad448-5d89-46b5-a457-43e8f69f2800",
+			"kind": "sheet",
+			"material": "lol",
+			"thickness": 18
+		},
+		"859ae745-a5ca-489d-8344-420af7319604": {
+			"id": "859ae745-a5ca-489d-8344-420af7319604",
+			"kind": "sheet",
+			"material": "OSB",
+			"thickness": 18
 		}
 	},
 	"measurements": {
@@ -584,36 +637,6 @@
 				"axis": "y",
 				"u": 1,
 				"v": -1
-			}
-		},
-		"ff5dca57-c078-4cea-a48f-80633d9b1d91": {
-			"id": "ff5dca57-c078-4cea-a48f-80633d9b1d91",
-			"from": {
-				"pieceId": "eb5396e1-5a6a-4f8b-9336-5db082a121de",
-				"axis": "z",
-				"u": 1,
-				"v": -1
-			},
-			"to": {
-				"pieceId": "eb5396e1-5a6a-4f8b-9336-5db082a121de",
-				"axis": "z",
-				"u": -1,
-				"v": -1
-			}
-		},
-		"5ac8df80-9b68-4cd1-9663-146dc55bc05d": {
-			"id": "5ac8df80-9b68-4cd1-9663-146dc55bc05d",
-			"from": {
-				"pieceId": "eb5396e1-5a6a-4f8b-9336-5db082a121de",
-				"axis": "z",
-				"u": -1,
-				"v": -1
-			},
-			"to": {
-				"pieceId": "eb5396e1-5a6a-4f8b-9336-5db082a121de",
-				"axis": "x",
-				"u": -1,
-				"v": 1
 			}
 		}
 	},

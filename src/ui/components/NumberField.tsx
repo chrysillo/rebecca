@@ -42,7 +42,7 @@ export function NumberField({
 
 	return (
 		<label
-			className={`grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 ${smallLabel ? "text-[11px]" : "text-[13px]"}`}
+			className={`grid ${smallValue ? "grid-cols-[minmax(0,1fr)_4.5rem]" : "grid-cols-[minmax(0,1fr)_6rem]"} items-center gap-2 ${smallLabel ? "text-[11px]" : "text-[13px]"}`}
 		>
 			<span className={readOnly ? "text-neutral-400" : "text-neutral-600"}>
 				{label}

@@ -4,6 +4,11 @@ import type { FacePlane, FaceRef } from "@/geometry/box";
 export type ExtrudeState = {
 	/** Every face that moves. The last one is the primary: it follows the mouse, snaps and shows the readout. */
 	faces: FaceRef[];
+	/**
+	 * When started on a whole piece rather than chosen faces: every face that could be extruded,
+	 * nearest the pointer first. Tab steps `faces` through them. Empty otherwise.
+	 */
+	choices: FaceRef[];
 	/** Pointer position along the face normal when extruding began; null until the viewport measures it. */
 	startParam: number | null;
 	/** Current stepped/snapped distance from the mouse, in mm. Positive grows the piece. */

@@ -12,6 +12,7 @@ import { ExtrudeController } from "@/scene/extrude/ExtrudeController";
 import { ExtrudeReadout } from "@/scene/extrude/ExtrudeReadout";
 import { FaceArrow } from "@/scene/extrude/FaceArrow";
 import { FaceHighlight } from "@/scene/extrude/FaceHighlight";
+import { ResizeHandles } from "@/scene/extrude/ResizeHandles";
 import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/gizmo/Gizmos";
 import { gizmoFirstEvents } from "@/scene/gizmoEvents";
@@ -72,6 +73,7 @@ export function Viewport() {
 				<SnapGuide />
 				<Gizmos />
 				<FaceArrow />
+				<ResizeHandles />
 			</group>
 			<OrbitControls
 				makeDefault

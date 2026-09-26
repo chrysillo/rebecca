@@ -73,13 +73,8 @@ export function dimensionEntries(piece: Piece): DimensionEntry[] {
 			return [
 				{ key: "length", value: piece.length, editable: true },
 				{ key: "width", value: piece.width, editable: true },
-				{ key: "thickness", value: piece.thickness, editable: false },
 			];
 		case "framing":
-			return [
-				{ key: "length", value: piece.length, editable: true },
-				{ key: "width", value: piece.width, editable: false },
-				{ key: "depth", value: piece.depth, editable: false },
-			];
+			return [{ key: "length", value: piece.length, editable: true }];
 	}
 }

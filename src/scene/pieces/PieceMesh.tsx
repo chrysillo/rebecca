@@ -10,6 +10,7 @@ import {
 	faceFromLocalNormal,
 	rotateVector,
 } from "@/geometry/box";
+import { setBoxUvs } from "@/geometry/boxUv";
 import { cutGeometry } from "@/geometry/cut";
 import { featureEdges } from "@/geometry/edges";
 import { extrudableDimension } from "@/geometry/extrude";
@@ -18,6 +19,7 @@ import { DEG, type Vec3 } from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
 import { groupOf } from "@/model/group";
 import type { Id, Piece } from "@/model/types";
+import { materialTexture } from "@/scene/pieces/materialTexture";
 import { pickEdge } from "@/scene/pieces/pickEdge";
 import { pieceLook } from "@/scene/pieces/pieceLook";
 import { usePlaneDrag } from "@/scene/pieces/usePlaneDrag";
@@ -33,6 +35,9 @@ const CLICK_SLOP = 3;
 const HATCH_SPACING = 12;
 const MAX_HATCH_LINES = 40;
 const HATCH_OPACITY = 0.35;
+
+/** How many mm one repeat of a sheet's material pattern covers. */
+const TEXTURE_TILE_MM = 400;
 
 /** How near (mm) a hit must be to the box's outside to count as that face rather than inside a cut. */
 const SURFACE_TOLERANCE = 0.05;
@@ -67,6 +72,7 @@ function usePieceGeometry(
 		const geometry = cutters.length
 			? cutGeometry(piece, cutters)
 			: new BoxGeometry(size.x, size.y, size.z);
+		setBoxUvs(geometry, TEXTURE_TILE_MM);
 		return { geometry, edges: featureEdges(geometry) };
 	}, [key, size.x, size.y, size.z]);
 	useEffect(() => () => shape.geometry.dispose(), [shape]);
@@ -120,6 +126,7 @@ export function PieceMesh({
 	const { position: p, rotation: r } = piece;
 	const stock = useAppStore((s) => s.doc.stock[piece.stockId]);
 	const base = stock ? stockColor(stock) : WOOD_COLOR[piece.kind];
+	const map = stock ? materialTexture(stock) : null;
 	const look = pieceLook(base, { selected, hovered, ghost, joinRole });
 	// biome-ignore lint/correctness/useExhaustiveDependencies: the size's numbers stand for `size`.
 	const hatch = useMemo(() => {
@@ -244,9 +251,10 @@ export function PieceMesh({
 			onDoubleClick={onDoubleClick}
 		>
 			<meshStandardMaterial
-				// three only picks up a change to `transparent` on a new material, so swap it.
-				key={look.seeThrough ? "see-through" : "solid"}
+				// three only picks up a change to `transparent` or `map` on a new material, so swap it.
+				key={`${look.seeThrough ? "see-through" : "solid"}-${map ? "mapped" : "plain"}`}
 				color={look.fill}
+				map={map}
 				transparent={look.seeThrough}
 				opacity={look.opacity}
 				// So what's behind a see-through piece (e.g. the cut it would make) still draws.

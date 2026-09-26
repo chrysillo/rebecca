@@ -10,6 +10,7 @@ const HINTS = [
 	["Shift + drag", "1 mm / 5° steps"],
 	["Alt + move/rotate", "duplicate"],
 	["E", "extrude face (type mm, Enter)"],
+	["E on a piece", "extrude nearest edge (Tab: next)"],
 	["J", "join: cut overlapping pieces"],
 	["⌘G / ⇧⌘G", "group / ungroup"],
 	["⌥ Click", "one piece inside a group"],

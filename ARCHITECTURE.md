@@ -70,9 +70,9 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 | --- | --- |
 | (root) | `Viewport`, `Floor`, `gizmoEvents` (gizmo handles win clicks over pieces) |
 | `shared/` | Plumbing for several folders: `ScreenSizeGroup`, `useGizmoPointer` / `toRay`, `useOrbitControls`, `gizmoStyle` |
-| `pieces/` | Drawing and picking pieces: `Pieces`, `PieceMesh`, `pieceLook` (colours for each state), `pickEdge`, `usePlaneDrag` |
+| `pieces/` | Drawing and picking pieces: `Pieces`, `PieceMesh`, `pieceLook` (colours for each state), `materialTexture` (the pencil pattern for each sheet material), `pickEdge`, `usePlaneDrag` |
 | `gizmo/` | The move/rotate gizmo: `Gizmos` (entry), arrows, arcs, pivot handle, rotation guide and readout, drag hooks, `useCameraView` |
-| `extrude/` | Face highlight, face arrow, extrude controller and readout |
+| `extrude/` | Face highlight, face arrow, resize handles (with their shared `useExtrudeDrag`), extrude controller and readout |
 | `annotations/` | Lines and labels over the model: measurements, live gaps, `DimensionLine`, snap guide |
 | `camera/` | `ViewCube` (camera moves) with its `FaceCube`, `AxisTriad` and `CubeHud` (the corner overlay with its own perspective camera), and `ScreenProjection` (shares the camera with the UI through `input/screen`) |
 | `export/` | `ViewExporter` (renders the views sheet), `drawDimensions` (its 2D dimension lines) |
@@ -154,4 +154,4 @@ Places where the code breaks the rules above. Fix them when next working nearby,
 - `state/projects.ts` is an imperative flow (open, close and rename projects) rather than state, and it and `persistence/autosave.ts` import each other. It could move to `persistence/`.
 - `tools/` mixes sessions with pure drag maths. Split it into two folders if it grows much past its current 10 files.
 - Over ~250 lines: `state/projects.ts` (~315) and `ui/outliner/OutlinerRows.tsx` (~310). Both hang together well; split them if they grow.
-- No direct tests for `tools/extrudeTool.ts`, `model/dimensions.ts` or `snapping/tolerance.ts`.
+- No direct tests for `computeExtrude` in `tools/extrudeTool.ts`, `model/dimensions.ts` or `snapping/tolerance.ts`.

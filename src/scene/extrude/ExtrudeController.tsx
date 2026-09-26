@@ -33,7 +33,11 @@ const NO_MODIFIERS: ModifierFlags = {
  * Renders nothing; it only translates pointer input into extrude state.
  */
 export function ExtrudeController() {
-	const active = useAppStore((s) => s.extrude !== null);
+	// Keyed on the primary face, so switching face (Tab) measures the start again from the mouse.
+	const active = useAppStore((s) => {
+		const face = s.extrude ? primaryFace(s.extrude) : null;
+		return face ? `${face.pieceId}:${face.axis}${face.sign}` : null;
+	});
 	const camera = useThree((s) => s.camera) as PerspectiveCamera;
 	const canvas = useThree((s) => s.gl.domElement);
 	const viewportHeight = useThree((s) => s.size.height);

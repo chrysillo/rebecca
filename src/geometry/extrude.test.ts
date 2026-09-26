@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { FaceRef } from "@/geometry/box";
 import { pieceAabb } from "@/geometry/box";
-import { extrudeAll, extrudePiece } from "@/geometry/extrude";
+import { extrudableFaces, extrudeAll, extrudePiece } from "@/geometry/extrude";
 import { lowestZ } from "@/geometry/floor";
 import { vec3 } from "@/geometry/vec";
 import { defined, rail, sheet } from "@/test/fixtures";
@@ -52,5 +52,17 @@ describe("extrudeAll", () => {
 
 	it("refuses the whole extrude if any face is fixed", () => {
 		expect(extrudeAll({ rail: rail() }, [end, side], 50)).toBeNull();
+	});
+});
+
+describe("extrudableFaces", () => {
+	it("is a sheet's four edges and a rail's two ends", () => {
+		expect(extrudableFaces(sheet()).map((f) => `${f.axis}${f.sign}`)).toEqual([
+			"x-1",
+			"x1",
+			"y-1",
+			"y1",
+		]);
+		expect(extrudableFaces(rail())).toEqual([start, end]);
 	});
 });

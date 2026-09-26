@@ -12,8 +12,6 @@ import { Group, Panel } from "@/ui/Panel";
 const DIMENSION_LABEL: Record<string, string> = {
 	length: "Length",
 	width: "Width",
-	thickness: "Thickness",
-	depth: "Depth",
 };
 
 /** Top-right: numeric properties of the selected piece. */
@@ -115,9 +113,13 @@ function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
 function PieceProperties({ piece }: { piece: Piece }) {
 	const stock = useAppStore((s) => s.doc.stock[piece.stockId]);
 	return (
-		<Panel title={piece.name} width="w-44">
-			{stock?.kind === "sheet" && (
-				<p className="-mt-2 text-[11px] text-neutral-400">{stock.material}</p>
+		<Panel title={piece.name} width="w-36">
+			{stock && (
+				<p className="-mt-2 text-[11px] text-neutral-400">
+					{stock.kind === "sheet"
+						? `${stock.material} ${stock.thickness}mm`
+						: `${stock.width} × ${stock.depth}mm`}
+				</p>
 			)}
 			<Joints piece={piece} />
 			<div className="flex flex-col gap-1.5">

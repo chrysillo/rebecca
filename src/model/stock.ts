@@ -55,6 +55,13 @@ export const stockOfKind = <K extends PieceKind>(
 		(s): s is Extract<Stock, { kind: K }> => s.kind === kind,
 	);
 
+/** A stable number for a material name, so a name with no look of its own still gets the same one every time. */
+export function materialHash(material: string): number {
+	let hash = 0;
+	for (const ch of material) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+	return hash;
+}
+
 /** Sheets first, then framing: the order shown in the create wheel and the stock panel. */
 export const orderedStock = (stock: Record<Id, Stock>): Stock[] => [
 	...stockOfKind(stock, "sheet"),
