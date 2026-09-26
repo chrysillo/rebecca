@@ -30,7 +30,7 @@ export function toolsFor(doc: DocumentState, target: Id): Id[] {
 		.map((p) => p.id);
 }
 
-/** Room (mm) kept around a joint for the preview, which pulls the cutting piece clear of it. */
+/** Room (mm) kept clear around a joint, so the wheel never sits over the preview. */
 const JOINT_MARGIN = 120;
 
 /**

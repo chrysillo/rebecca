@@ -34,6 +34,20 @@ export const updateStock =
 		return { ...doc, stock: { ...doc.stock, [id]: next }, pieces };
 	};
 
+/** Renames a sheet's material (e.g. "Plywood" to "OSB"). Blank names are refused. */
+export const setStockMaterial =
+	(id: Id, material: string): Command =>
+	(doc) => {
+		const current = doc.stock[id];
+		const name = material.trim();
+		if (current?.kind !== "sheet" || !name || name === current.material)
+			return doc;
+		return {
+			...doc,
+			stock: { ...doc.stock, [id]: { ...current, material: name } },
+		};
+	};
+
 export const stockInUse = (pieces: Record<Id, Piece>, id: Id): number =>
 	Object.values(pieces).filter((p) => p.stockId === id).length;
 

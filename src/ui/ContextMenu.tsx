@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { cutSizeLabel, stockLabel } from "@/model/stock";
+import { cutSizeLabel, stockFullLabel } from "@/model/stock";
 import { useAppStore } from "@/state/store";
 import { closeContextMenu, menuItems } from "@/tools/contextMenuSession";
 
@@ -77,7 +77,7 @@ export function ContextMenu() {
 				</span>
 				<span className="shrink-0 font-mono text-[10px] tabular-nums text-neutral-400">
 					{cutSizeLabel(piece)}
-					{stock && ` · ${stockLabel(stock)}`}
+					{stock && ` · ${stockFullLabel(stock)}`}
 				</span>
 			</div>
 			<div className="mx-1 mb-1 h-px bg-black/6" />

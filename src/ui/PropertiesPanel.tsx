@@ -113,8 +113,12 @@ function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
 }
 
 function PieceProperties({ piece }: { piece: Piece }) {
+	const stock = useAppStore((s) => s.doc.stock[piece.stockId]);
 	return (
 		<Panel title={piece.name} width="w-44">
+			{stock?.kind === "sheet" && (
+				<p className="-mt-2 text-[11px] text-neutral-400">{stock.material}</p>
+			)}
 			<Joints piece={piece} />
 			<div className="flex flex-col gap-1.5">
 				{dimensionEntries(piece).map((d) => (
@@ -125,6 +129,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 						greaterThan={0}
 						unit="mm"
 						smallLabel
+						smallValue
 						onCommit={
 							d.editable
 								? (v) => applyCommand(commands.setDimension(piece.id, d.key, v))

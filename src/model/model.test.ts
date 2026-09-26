@@ -41,6 +41,12 @@ describe("cutListKey", () => {
 			cutListKey(rail()),
 		);
 	});
+
+	it("separates the same cut from different stock (e.g. plywood and OSB)", () => {
+		expect(cutListKey(sheet({ stockId: "osb-18" }))).not.toBe(
+			cutListKey(sheet()),
+		);
+	});
 });
 
 describe("defaultName", () => {
@@ -58,14 +64,19 @@ describe("defaultName", () => {
 describe("stock lookups", () => {
 	const stock: Record<string, Stock> = {
 		f: { id: "f", kind: "framing", width: 38, depth: 63 },
-		s: { id: "s", kind: "sheet", thickness: 18 },
+		s: { id: "s", kind: "sheet", material: "Plywood", thickness: 18 },
+		o: { id: "o", kind: "sheet", material: "OSB", thickness: 18 },
 	};
 
 	it("finds an entry by exact size and kind", () => {
-		expect(findStock(stock, "framing", { width: 38, depth: 63 })?.id).toBe("f");
-		expect(
-			findStock(stock, "framing", { width: 38, depth: 64 }),
-		).toBeUndefined();
+		expect(findStock(stock, stock.f, { width: 38, depth: 63 })?.id).toBe("f");
+		expect(findStock(stock, stock.f, { width: 38, depth: 64 })).toBeUndefined();
+	});
+
+	it("finds sheets of the same material only", () => {
+		expect(findStock(stock, stock.o, { thickness: 18 })?.id).toBe("o");
+		expect(findStock(stock, stock.s, { thickness: 18 })?.id).toBe("s");
+		expect(findStock(stock, stock.o, { thickness: 12 })).toBeUndefined();
 	});
 
 	it("matches only the size values given", () => {
@@ -75,7 +86,7 @@ describe("stock lookups", () => {
 	});
 
 	it("lists sheets before framing", () => {
-		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "f"]);
+		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "o", "f"]);
 	});
 });
 

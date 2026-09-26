@@ -10,7 +10,7 @@ export function exportCutList() {
 		return;
 	}
 	void navigator.clipboard
-		.writeText(cutListText(cutList(pieces)))
+		.writeText(cutListText(cutList(pieces, doc.stock)))
 		.then(() => showNotice("Cut list copied to clipboard."))
 		.catch(() => showNotice("Couldn't copy the cut list."));
 }

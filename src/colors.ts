@@ -1,4 +1,5 @@
 import type { Axis } from "@/geometry/vec";
+import type { Stock } from "@/model/stock";
 import type { PieceKind } from "@/model/types";
 
 /**
@@ -6,11 +7,31 @@ import type { PieceKind } from "@/model/types";
  * stays a named constant at the top of that file.
  */
 
-/** Each kind of piece's wood colour: the pieces in the 3D view, the swatches in the panels. */
+/** Each kind of piece's wood colour. Sheets are coloured by material instead (see `stockColor`). */
 export const WOOD_COLOR: Record<PieceKind, string> = {
 	sheet: "#dcc196",
 	framing: "#c99a63",
 };
+
+/** Sheet materials with a colour of their own: pale plywood, more golden OSB. */
+const MATERIAL_COLOR: Record<string, string> = {
+	Plywood: WOOD_COLOR.sheet,
+	OSB: "#cfa24c",
+};
+
+/**
+ * A stock entry's colour in the 3D view and the object list. Sheets are coloured by material so
+ * same-size ply and OSB look different; any other material name gets its own muted hue, the
+ * same every time.
+ */
+export function stockColor(stock: Stock): string {
+	if (stock.kind !== "sheet") return WOOD_COLOR[stock.kind];
+	const known = MATERIAL_COLOR[stock.material];
+	if (known) return known;
+	let hash = 0;
+	for (const ch of stock.material) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+	return `hsl(${hash % 360}, 30%, 68%)`;
+}
 
 /** Gizmo arrows and arcs: softer axis colours, Shapr3D style. */
 export const AXIS_COLOR: Record<Axis, string> = {

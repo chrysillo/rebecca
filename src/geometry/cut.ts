@@ -1,5 +1,5 @@
 import { BoxGeometry, type BufferGeometry, Matrix4, Vector3 } from "three";
-import { Brush, Evaluator, INTERSECTION, SUBTRACTION } from "three-bvh-csg";
+import { Brush, Evaluator, SUBTRACTION } from "three-bvh-csg";
 import { rotationQuaternion } from "@/geometry/box";
 import { piecesOverlap } from "@/geometry/overlap";
 import { pieceSize } from "@/model/dimensions";
@@ -48,20 +48,5 @@ export function cutGeometry(target: Piece, tools: Piece[]): BufferGeometry {
 		brush.geometry.dispose();
 		result = next;
 	}
-	return result.geometry;
-}
-
-/** The material a tool would remove from the target (their overlap), in the target's frame. */
-export function overlapGeometry(target: Piece, tool: Piece): BufferGeometry {
-	const a = new Brush(box(target));
-	a.updateMatrixWorld();
-	const b = new Brush(box(tool));
-	b.applyMatrix4(
-		new Matrix4().multiplyMatrices(matrix(target).invert(), matrix(tool)),
-	);
-	b.updateMatrixWorld();
-	const result = evaluator.evaluate(a, b, INTERSECTION);
-	a.geometry.dispose();
-	b.geometry.dispose();
 	return result.geometry;
 }

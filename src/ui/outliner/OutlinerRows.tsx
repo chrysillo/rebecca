@@ -1,5 +1,5 @@
 import { type MouseEvent, type ReactNode, useEffect, useRef } from "react";
-import { WOOD_COLOR } from "@/colors";
+import { stockColor } from "@/colors";
 import { commands } from "@/commands";
 import type { Group } from "@/model/group";
 import { cutSizeLabel, type StockSection, stockLabel } from "@/model/stock";
@@ -135,7 +135,10 @@ type StockRowsProps = {
 	children: ReactNode;
 };
 
-/** A stock size header, e.g. "Timber 38 × 63 · 12" (click selects all of them), then its pieces. */
+/**
+ * A stock size header, e.g. "Timber 38 × 63 · 12" or "OSB 18 mm · 3" (sheets show their
+ * material), then its pieces. Clicking it selects all of them.
+ */
 export function StockRows({
 	section,
 	depth,
@@ -146,27 +149,28 @@ export function StockRows({
 	children,
 }: StockRowsProps) {
 	const { stock, pieces } = section;
+	const title = stock.kind === "sheet" ? stock.material : SECTION_NAME.framing;
 	return (
 		<>
 			<li className={`${rowClass(selected)} text-[11px]`} style={indent(depth)}>
 				<Chevron
 					collapsed={collapsed}
 					onClick={onToggleCollapsed}
-					label={`${SECTION_NAME[stock.kind]} ${stockLabel(stock)}`}
+					label={`${title} ${stockLabel(stock)}`}
 				/>
 				<span
 					className="h-2 w-2 shrink-0 rounded-[2px]"
-					style={{ background: WOOD_COLOR[stock.kind] }}
+					style={{ background: stockColor(stock) }}
 				/>
 				<button
 					type="button"
 					className="flex min-w-0 flex-1 items-baseline justify-between gap-2 text-left"
 					onClick={onSelect}
-					title={`Click to select every ${SECTION_NAME[stock.kind].toLowerCase()} of this size (Shift/⌘ to add)`}
+					title={`Click to select every ${SECTION_NAME[stock.kind].toLowerCase()} of this stock (Shift/⌘ to add)`}
 				>
 					<span className="truncate">
 						<span className="font-condensed font-semibold uppercase tracking-[0.08em] text-neutral-500">
-							{SECTION_NAME[stock.kind]}
+							{title}
 						</span>{" "}
 						<span className="font-mono tabular-nums">{stockLabel(stock)}</span>
 					</span>

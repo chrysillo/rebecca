@@ -70,7 +70,7 @@ Each layer imports only from the layers below it. `scene/` and `ui/` never impor
 | --- | --- |
 | (root) | `Viewport`, `Floor`, `gizmoEvents` (gizmo handles win clicks over pieces) |
 | `shared/` | Plumbing for several folders: `ScreenSizeGroup`, `useGizmoPointer` / `toRay`, `useOrbitControls`, `gizmoStyle` |
-| `pieces/` | Drawing and picking pieces: `Pieces`, `PieceMesh`, `pieceLook` (colours for each state), `pickEdge`, `usePlaneDrag`, `JoinOverlap` |
+| `pieces/` | Drawing and picking pieces: `Pieces`, `PieceMesh`, `pieceLook` (colours for each state), `pickEdge`, `usePlaneDrag` |
 | `gizmo/` | The move/rotate gizmo: `Gizmos` (entry), arrows, arcs, pivot handle, rotation guide and readout, drag hooks, `useCameraView` |
 | `extrude/` | Face highlight, face arrow, extrude controller and readout |
 | `annotations/` | Lines and labels over the model: measurements, live gaps, `DimensionLine`, snap guide |

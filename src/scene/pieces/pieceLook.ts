@@ -1,33 +1,27 @@
 import { Color } from "three";
-import { WOOD_COLOR } from "@/colors";
-import type { PieceKind } from "@/model/types";
 
-const tinted = (tint: string, amount: number) => ({
-	sheet: new Color(WOOD_COLOR.sheet).lerp(new Color(tint), amount),
-	framing: new Color(WOOD_COLOR.framing).lerp(new Color(tint), amount),
-});
+/** The piece's own colour moved `amount` of the way towards `tint`. */
+const tinted = (base: string, tint: string, amount: number) =>
+	new Color(base).lerp(new Color(tint), amount);
 
 const EDGE = "#5c4a32";
 
 /** Selected pieces keep their wood colour under a light amber tint, outlined in the UI's amber accent. */
 const SELECTED_TINT = "#fcd34d";
-const SELECTED_FILL = tinted(SELECTED_TINT, 0.35);
 const SELECTED_EDGE = "#f59e0b";
 
 /** Under the pointer (or its right-click menu open): lifted towards white, with a darker amber edge. */
 const HOVER_TINT = "#fff7e6";
-const HOVER_FILL = tinted(HOVER_TINT, 0.35);
-const HOVER_SELECTED_FILL = {
-	sheet: SELECTED_FILL.sheet.clone().lerp(new Color(HOVER_TINT), 0.3),
-	framing: SELECTED_FILL.framing.clone().lerp(new Color(HOVER_TINT), 0.3),
-};
 const HOVER_EDGE = "#d97706";
 
-/** Join wheel preview: the piece to be cut glows amber; the pieces cutting it (pulled clear) are faded. */
-const JOIN_TARGET_FILL = tinted("#f5a524", 0.65);
+/**
+ * Join wheel preview: the piece to be cut glows amber. The pieces cutting it are nearly see-through
+ * and faintly hatched, so they read as hidden to show the cut rather than as part of it.
+ */
+const JOIN_TARGET_TINT = "#f5a524";
 const JOIN_TARGET_EDGE = "#b45309";
 const JOIN_TOOL_EDGE = "#8a7a64";
-const JOIN_TOOL_OPACITY = 0.4;
+const JOIN_TOOL_OPACITY = 0.15;
 
 /** The copies following the pointer during a duplicate-drag are see-through. */
 const GHOST_OPACITY = 0.6;
@@ -47,44 +41,54 @@ export type PieceLook = {
 	opacity: number;
 	/** See-through: drawn transparent and without writing depth. */
 	seeThrough: boolean;
+	/** Faint diagonal hatching across the faces. */
+	hatched: boolean;
 };
 
-/** How a piece is drawn in each state. The join preview overrides selection and hover. */
+/**
+ * How a piece is drawn in each state, starting from its own colour (`base`, from its stock).
+ * The join preview overrides selection and hover.
+ */
 export function pieceLook(
-	kind: PieceKind,
+	base: string,
 	{ selected, hovered, ghost, joinRole }: PieceState,
 ): PieceLook {
 	const seeThrough = ghost || joinRole === "tool";
+	const hatched = joinRole === "tool";
 	const opacity =
 		joinRole === "tool" ? JOIN_TOOL_OPACITY : ghost ? GHOST_OPACITY : 1;
 	if (joinRole === "target")
 		return {
-			fill: JOIN_TARGET_FILL[kind],
+			fill: tinted(base, JOIN_TARGET_TINT, 0.65),
 			edge: JOIN_TARGET_EDGE,
 			edgeWidth: 2.5,
 			opacity,
 			seeThrough,
+			hatched,
 		};
 	if (joinRole === "tool")
 		return {
-			fill: WOOD_COLOR[kind],
+			fill: base,
 			edge: JOIN_TOOL_EDGE,
 			edgeWidth: 1,
 			opacity,
 			seeThrough,
+			hatched,
 		};
+	const selectedFill = tinted(base, SELECTED_TINT, 0.35);
 	const fill = hovered
 		? selected
-			? HOVER_SELECTED_FILL[kind]
-			: HOVER_FILL[kind]
+			? selectedFill.lerp(new Color(HOVER_TINT), 0.3)
+			: tinted(base, HOVER_TINT, 0.35)
 		: selected
-			? SELECTED_FILL[kind]
-			: WOOD_COLOR[kind];
+			? selectedFill
+			: base;
 	return {
 		fill,
 		edge: selected ? SELECTED_EDGE : hovered ? HOVER_EDGE : EDGE,
 		edgeWidth: selected ? 2.5 : hovered ? 2 : 1,
 		opacity,
 		seeThrough,
+		hatched,
 	};
 }

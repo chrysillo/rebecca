@@ -2,8 +2,10 @@ import { Line } from "@react-three/drei";
 import { type ThreeEvent, useThree } from "@react-three/fiber";
 import { useEffect, useMemo } from "react";
 import { BoxGeometry, type BufferGeometry, type Intersection } from "three";
+import { stockColor, WOOD_COLOR } from "@/colors";
 import { commands } from "@/commands";
 import {
+	type Aabb,
 	type FaceRef,
 	faceFromLocalNormal,
 	rotateVector,
@@ -11,6 +13,7 @@ import {
 import { cutGeometry } from "@/geometry/cut";
 import { featureEdges } from "@/geometry/edges";
 import { extrudableDimension } from "@/geometry/extrude";
+import { boxHatch, clipOutside } from "@/geometry/hatch";
 import { DEG, type Vec3 } from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
 import { groupOf } from "@/model/group";
@@ -26,6 +29,11 @@ import { measureClick } from "@/tools/measureSession";
 /** Max pointer travel (px) between press and release for it to count as a click. */
 const CLICK_SLOP = 3;
 
+/** Hatching on a join tool: spacing (mm), widened on big pieces so they don't fill up with lines. */
+const HATCH_SPACING = 12;
+const MAX_HATCH_LINES = 40;
+const HATCH_OPACITY = 0.35;
+
 /** How near (mm) a hit must be to the box's outside to count as that face rather than inside a cut. */
 const SURFACE_TOLERANCE = 0.05;
 
@@ -37,8 +45,8 @@ type Props = {
 	ghost: boolean;
 	cutters: Piece[];
 	joinRole?: "target" | "tool";
-	/** Drawn this far from where the piece really is (the join preview pulls tools clear). */
-	displayOffset?: Vec3;
+	/** Join preview: where this tool overlaps the piece being cut (local frame), left unhatched. */
+	hatchExclude?: Aabb | null;
 };
 
 /** Everything the shape depends on, so the (costly) cut is only redone when one of these changes. */
@@ -104,13 +112,25 @@ export function PieceMesh({
 	ghost,
 	cutters,
 	joinRole,
-	displayOffset,
+	hatchExclude,
 }: Props) {
 	const size = pieceSize(piece);
 	const { geometry, edges } = usePieceGeometry(piece, cutters);
 	const viewport = useThree((st) => st.size);
 	const { position: p, rotation: r } = piece;
-	const look = pieceLook(piece.kind, { selected, hovered, ghost, joinRole });
+	const stock = useAppStore((s) => s.doc.stock[piece.stockId]);
+	const base = stock ? stockColor(stock) : WOOD_COLOR[piece.kind];
+	const look = pieceLook(base, { selected, hovered, ghost, joinRole });
+	// biome-ignore lint/correctness/useExhaustiveDependencies: the size's numbers stand for `size`.
+	const hatch = useMemo(() => {
+		if (!look.hatched) return null;
+		const longest = Math.max(size.x, size.y, size.z);
+		const lines = boxHatch(
+			size,
+			Math.max(HATCH_SPACING, longest / MAX_HATCH_LINES),
+		);
+		return hatchExclude ? clipOutside(lines, hatchExclude) : lines;
+	}, [look.hatched, hatchExclude, size.x, size.y, size.z]);
 
 	const onClick = (e: ThreeEvent<MouseEvent>) => {
 		// Gizmo parts (drawn on top) get the click even if the piece is nearer: let it through to them.
@@ -211,11 +231,10 @@ export function PieceMesh({
 		);
 	};
 
-	const o = displayOffset ?? { x: 0, y: 0, z: 0 };
 	return (
 		<mesh
 			geometry={geometry}
-			position={[p.x + o.x, p.y + o.y, p.z + o.z]}
+			position={[p.x, p.y, p.z]}
 			rotation={[r.x * DEG, r.y * DEG, r.z * DEG]}
 			onClick={onClick}
 			onPointerDown={onPointerDown}
@@ -225,6 +244,8 @@ export function PieceMesh({
 			onDoubleClick={onDoubleClick}
 		>
 			<meshStandardMaterial
+				// three only picks up a change to `transparent` on a new material, so swap it.
+				key={look.seeThrough ? "see-through" : "solid"}
 				color={look.fill}
 				transparent={look.seeThrough}
 				opacity={look.opacity}
@@ -242,6 +263,17 @@ export function PieceMesh({
 				color={look.edge}
 				lineWidth={look.edgeWidth}
 			/>
+			{hatch && hatch.length > 0 && (
+				<Line
+					segments
+					points={hatch}
+					raycast={() => null}
+					color={look.edge}
+					lineWidth={1}
+					transparent
+					opacity={HATCH_OPACITY}
+				/>
+			)}
 		</mesh>
 	);
 }

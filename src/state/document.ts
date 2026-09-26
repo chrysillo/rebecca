@@ -33,7 +33,12 @@ export type DocumentState = {
 
 /** A new project starts with one common size of each kind. */
 function starterStock(): Record<Id, Stock> {
-	const sheet: Stock = { id: newId(), kind: "sheet", thickness: 18 };
+	const sheet: Stock = {
+		id: newId(),
+		kind: "sheet",
+		material: "Plywood",
+		thickness: 18,
+	};
 	const framing: Stock = { id: newId(), kind: "framing", width: 38, depth: 63 };
 	return { [sheet.id]: sheet, [framing.id]: framing };
 }

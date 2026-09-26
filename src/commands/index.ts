@@ -30,6 +30,7 @@ import {
 	addStock,
 	removeStock,
 	setPieceStock,
+	setStockMaterial,
 	updateStock,
 } from "@/commands/stock";
 import { setTransforms } from "@/commands/transform";
@@ -64,4 +65,5 @@ export const commands = {
 	updateStock,
 	removeStock,
 	setPieceStock,
+	setStockMaterial,
 };

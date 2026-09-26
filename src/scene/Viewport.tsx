@@ -15,7 +15,6 @@ import { FaceHighlight } from "@/scene/extrude/FaceHighlight";
 import { Floor } from "@/scene/Floor";
 import { Gizmos } from "@/scene/gizmo/Gizmos";
 import { gizmoFirstEvents } from "@/scene/gizmoEvents";
-import { JoinOverlap } from "@/scene/pieces/JoinOverlap";
 import { Pieces } from "@/scene/pieces/Pieces";
 import { applyCommand, useAppStore } from "@/state/store";
 import { cancelMeasure } from "@/tools/measureSession";
@@ -66,7 +65,6 @@ export function Viewport() {
 			{/* Hidden, not unmounted, while exporting: unmounting the HTML labels mid-render breaks them. */}
 			<group visible={!exporting}>
 				<Floor />
-				<JoinOverlap />
 				<FaceHighlight />
 				<Measurements />
 				<LiveGaps />

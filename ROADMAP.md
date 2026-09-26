@@ -7,6 +7,7 @@ What the modeller is for, what's built, and what's next. Update it when a featur
 ## Built
 
 - Sheets and timber from project stock sizes. Editing a stock size resizes every piece cut from it. The create wheel (R) has one slice per stock entry.
+- Sheet stock has a material (Plywood, OSB, or any name typed under "Other…"), so same-thickness sheets stay separate in the create wheel, object list and cut list. Each material has its own tint in the 3D view.
 - Select pieces or faces (Shift+click adds), plus groups (Alt+click reaches inside one).
 - Move and rotate gizmo with snapping, and a fine mode (1 mm / 5°). Seven rotation pivots, picked by dragging the white dot.
 - Drag a selected piece across the plane of the face you grabbed.
