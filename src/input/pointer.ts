@@ -2,7 +2,10 @@ import { useEffect } from "react";
 
 export type ScreenPoint = { x: number; y: number };
 
-let last: ScreenPoint = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+let last: ScreenPoint =
+	typeof window === "undefined"
+		? { x: 0, y: 0 }
+		: { x: window.innerWidth / 2, y: window.innerHeight / 2 };
 
 /** Where the mouse was last seen, in window pixels. Lets keyboard actions open things at the cursor. */
 export const lastPointer = (): ScreenPoint => last;

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { EdgeRef } from "@/geometry/box";
 import type { Id } from "@/model/types";
+import type { BoxSelectState } from "@/state/boxSelect";
 import type { CreatorState } from "@/state/creator";
 import {
 	type Command,
@@ -30,10 +31,14 @@ type AppState = {
 	measureStart: EdgeRef | null;
 	/** Measure tool: the edge under the pointer. */
 	measureHover: EdgeRef | null;
+	/** A saved measurement being slid along its edges by its label, and where it is now. */
+	measureDrag: { id: Id; at: number } | null;
 	/** The create wheel, when open. */
 	creator: CreatorState | null;
 	/** The join wheel, when open. */
 	joiner: JoinerState | null;
+	/** A selection box being dragged out, when there is one. */
+	boxSelect: BoxSelectState | null;
 	/** The stock entry used for the last new piece (preselected in the wheel next time). */
 	lastCreated: Id | null;
 	/** True while views are being exported: gizmos, grid and overlays are hidden. */
@@ -47,6 +52,10 @@ type AppState = {
 	reveal: { pieceId: Id; rename: boolean; id: number } | null;
 	/** The piece under the pointer, in the 3D view or the object list. */
 	hovered: Id | null;
+	/** The gizmo or resize handle under the pointer (e.g. "move:x"); the other handles dim. */
+	gizmoHover: string | null;
+	/** The list of every shortcut and mouse gesture, when open. */
+	shortcutsOpen: boolean;
 
 	/** Runs a command and records an undo step if the document changed. */
 	apply: (command: Command) => void;
@@ -59,13 +68,17 @@ type AppState = {
 	setTool: (tool: Tool) => void;
 	setMeasureStart: (edge: EdgeRef | null) => void;
 	setMeasureHover: (edge: EdgeRef | null) => void;
+	setMeasureDrag: (measureDrag: AppState["measureDrag"]) => void;
 	setCreator: (creator: CreatorState | null) => void;
 	setJoiner: (joiner: JoinerState | null) => void;
+	setBoxSelect: (boxSelect: BoxSelectState | null) => void;
 	setLastCreated: (stockId: Id) => void;
 	setExporting: (exporting: boolean) => void;
 	setContextMenu: (menu: AppState["contextMenu"]) => void;
 	revealInList: (pieceId: Id, options?: { rename?: boolean }) => void;
 	setHovered: (hovered: Id | null) => void;
+	setGizmoHover: (gizmoHover: string | null) => void;
+	setShortcutsOpen: (shortcutsOpen: boolean) => void;
 };
 
 export const useAppStore = create<AppState>()((set, get) => ({
@@ -77,13 +90,17 @@ export const useAppStore = create<AppState>()((set, get) => ({
 	tool: "select",
 	measureStart: null,
 	measureHover: null,
+	measureDrag: null,
 	creator: null,
 	joiner: null,
+	boxSelect: null,
 	lastCreated: null,
 	exporting: false,
 	contextMenu: null,
 	reveal: null,
 	hovered: null,
+	gizmoHover: null,
+	shortcutsOpen: false,
 
 	apply: (command) => {
 		const { doc } = get();
@@ -107,8 +124,10 @@ export const useAppStore = create<AppState>()((set, get) => ({
 		set({ tool, drag: null, measureStart: null, measureHover: null }),
 	setMeasureStart: (measureStart) => set({ measureStart }),
 	setMeasureHover: (measureHover) => set({ measureHover }),
+	setMeasureDrag: (measureDrag) => set({ measureDrag }),
 	setCreator: (creator) => set({ creator }),
 	setJoiner: (joiner) => set({ joiner }),
+	setBoxSelect: (boxSelect) => set({ boxSelect }),
 	setLastCreated: (lastCreated) => set({ lastCreated }),
 	setExporting: (exporting) => set({ exporting }),
 	setContextMenu: (contextMenu) => set({ contextMenu }),
@@ -117,6 +136,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
 			reveal: { pieceId, rename: options?.rename ?? false, id: Date.now() },
 		}),
 	setHovered: (hovered) => set({ hovered }),
+	setGizmoHover: (gizmoHover) => set({ gizmoHover }),
+	setShortcutsOpen: (shortcutsOpen) => set({ shortcutsOpen }),
 }));
 
 /** Shorthand for non-React callers (keybindings, tools). */

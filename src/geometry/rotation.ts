@@ -1,9 +1,7 @@
 import { Euler, Quaternion, Vector3 } from "three";
 import { rotationQuaternion } from "@/geometry/box";
-import { type Axis, axisVector } from "@/geometry/vec";
+import { type Axis, axisVector, DEG } from "@/geometry/vec";
 import type { Rotation } from "@/model/types";
-
-const DEG = Math.PI / 180;
 
 /** Applies an extra rotation about a world axis, returning new Euler XYZ degrees. */
 export function rotateAboutWorldAxis(

@@ -1,4 +1,4 @@
-import { rotateVector } from "@/geometry/box";
+import { type Aabb, rotateVector } from "@/geometry/box";
 import { AXES, axisVector, dot, sub, type Vec3 } from "@/geometry/vec";
 import { pieceSize } from "@/model/dimensions";
 import type { Piece } from "@/model/types";
@@ -51,29 +51,26 @@ export function piecesOverlap(a: Piece, b: Piece): boolean {
 }
 
 /**
- * The shortest way to pull `b` out of `a`: a unit direction (along a face normal of either box,
- * pointing from a towards b) and how far b must move along it to stop overlapping.
+ * Join preview: where `tool` overlaps `target` (the part the cut removes from the target), as a
+ * box in `tool`'s local frame (centred on the tool, before its rotation). Exact when the two are
+ * square to each other; otherwise the smallest such box holding the overlap. Null if they don't overlap.
  */
-export function pullApart(a: Piece, b: Piece): { axis: Vec3; depth: number } {
-	const A = orientedBox(a);
-	const B = orientedBox(b);
-	const gap = sub(B.centre, A.centre);
-	let best = { axis: A.axes[0], depth: Infinity };
-	for (const axis of [...A.axes, ...B.axes]) {
-		const radius = (box: typeof A) =>
-			box.axes.reduce(
-				(sum, u, i) => sum + box.half[i] * Math.abs(dot(u, axis)),
-				0,
-			);
-		const along = dot(gap, axis);
-		const depth = radius(A) + radius(B) - Math.abs(along);
-		if (depth < best.depth) {
-			const sign = along < 0 ? -1 : 1;
-			best = {
-				axis: { x: axis.x * sign, y: axis.y * sign, z: axis.z * sign },
-				depth,
-			};
-		}
+export function overlapBox(target: Piece, tool: Piece): Aabb | null {
+	const A = orientedBox(target);
+	const B = orientedBox(tool);
+	const offset = sub(A.centre, B.centre);
+	const min = { x: 0, y: 0, z: 0 };
+	const max = { x: 0, y: 0, z: 0 };
+	for (const [j, u] of B.axes.entries()) {
+		// The target's extent along this tool axis, clipped to the tool's own.
+		const mid = dot(offset, u);
+		const radius = A.axes.reduce(
+			(sum, a, i) => sum + A.half[i] * Math.abs(dot(a, u)),
+			0,
+		);
+		min[AXES[j]] = Math.max(-B.half[j], mid - radius);
+		max[AXES[j]] = Math.min(B.half[j], mid + radius);
+		if (max[AXES[j]] - min[AXES[j]] < MIN_DEPTH) return null;
 	}
-	return best;
+	return { min, max };
 }

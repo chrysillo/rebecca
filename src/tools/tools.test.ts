@@ -5,6 +5,12 @@ import { emptyHistory } from "@/state/history";
 import { useAppStore } from "@/state/store";
 import { docWith, rail, sheet } from "@/test/fixtures";
 import { typedSize } from "@/tools/creatorSession";
+import {
+	confirmExtrude,
+	handleExtrudeKey,
+	startExtrude,
+} from "@/tools/extrudeSession";
+import { facesNearestPointer } from "@/tools/extrudeTool";
 import { confirmJoin, openJoiner } from "@/tools/joinSession";
 import { computeMove, computePlaneMove } from "@/tools/moveTool";
 import { computeRotation } from "@/tools/rotateTool";
@@ -143,5 +149,106 @@ describe("computePlaneMove", () => {
 		// X just steps (nothing in range); Y snaps b's side against a's far side (38 + 19).
 		expect(moved.transforms.b.position).toEqual({ x: 1700, y: 57, z: 31.5 });
 		expect(moved.snapTarget).not.toBeNull();
+	});
+});
+
+describe("facesNearestPointer", () => {
+	const face = (axis: "x" | "y", sign: 1 | -1) => ({
+		pieceId: "sheet",
+		axis,
+		sign,
+	});
+
+	it("orders faces by on-screen distance, off-screen ones last", () => {
+		const ranked = facesNearestPointer(
+			[
+				{ face: face("x", -1), at: null },
+				{ face: face("x", 1), at: { x: 300, y: 100 } },
+				{ face: face("y", 1), at: { x: 110, y: 100 } },
+				{ face: face("y", -1), at: null },
+			],
+			{ x: 100, y: 100 },
+		);
+		expect(ranked).toEqual([
+			face("y", 1),
+			face("x", 1),
+			face("x", -1),
+			face("y", -1),
+		]);
+	});
+});
+
+describe("extruding a whole piece (E with no face selected)", () => {
+	const key = (k: string, shiftKey = false) =>
+		handleExtrudeKey({
+			key: k,
+			shiftKey,
+			ctrlKey: false,
+			metaKey: false,
+			altKey: false,
+		});
+
+	beforeEach(() => {
+		useAppStore.setState({
+			doc: { ...docWith([sheet()]), selection: ["sheet"] },
+			history: emptyHistory,
+			extrude: null,
+		});
+	});
+
+	it("moves one of the sheet's edges, and Tab steps round the others", () => {
+		startExtrude();
+		const first = useAppStore.getState().extrude;
+		expect(first?.faces).toHaveLength(1);
+		expect(first?.choices).toHaveLength(4);
+		expect(first?.choices.flat().every((f) => f.axis !== "z")).toBe(true);
+
+		const facesNow = () => useAppStore.getState().extrude?.faces;
+		expect(key("Tab")).toBe(true);
+		expect(facesNow()).toEqual(first?.choices[1]);
+		key("Tab", true);
+		key("Tab", true);
+		expect(facesNow()).toEqual(first?.choices[3]);
+	});
+
+	it("moves every selected piece's face in the same plane together", () => {
+		const other = rail({ id: "other", position: { x: 500, y: 219, z: 31.5 } });
+		useAppStore.setState({
+			doc: { ...docWith([rail(), other]), selection: ["rail", "other"] },
+		});
+		startExtrude();
+		const { extrude } = useAppStore.getState();
+		// Two rails side by side: their near ends share a plane, as do their far ends.
+		expect(extrude?.choices).toHaveLength(2);
+		expect(extrude?.faces.map((f) => f.pieceId).sort()).toEqual([
+			"other",
+			"rail",
+		]);
+		key("2");
+		key("0");
+		confirmExtrude();
+		const { doc } = useAppStore.getState();
+		expect(doc.pieces.rail.length).toBe(1020);
+		expect(doc.pieces.other.length).toBe(1020);
+	});
+
+	it("resizes the piece in one undo step and keeps it selected", () => {
+		startExtrude();
+		key("5");
+		key("0");
+		confirmExtrude();
+		const { doc, history } = useAppStore.getState();
+		const s = doc.pieces.sheet;
+		expect(s.kind === "sheet" && s.length + s.width).toBe(1850);
+		expect(doc.selection).toEqual(["sheet"]);
+		expect(history.past).toHaveLength(1);
+	});
+
+	it("explains, rather than starting, when nothing is selected", () => {
+		useAppStore.setState({
+			doc: { ...docWith([sheet()]), selectedFaces: [], selection: [] },
+		});
+		expect(startExtrude()).toBe(false);
+		expect(key("Tab")).toBe(false);
 	});
 });

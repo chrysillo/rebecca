@@ -1,8 +1,17 @@
 import { cutListKey } from "@/model/cutListKey";
 import type { Id, Piece, PieceKind } from "@/model/types";
 
-/** A sheet material the project uses, e.g. 18 mm ply. */
-export type SheetStock = { id: Id; kind: "sheet"; thickness: number };
+/**
+ * A sheet the project uses, e.g. 18 mm plywood. Two sheets of the same thickness but different
+ * materials (plywood and OSB) are separate entries, so they stay apart in the object list and cut list.
+ */
+export type SheetStock = {
+	id: Id;
+	kind: "sheet";
+	/** Free text, e.g. "Plywood" or "OSB". */
+	material: string;
+	thickness: number;
+};
 
 /** A timber section the project uses, e.g. 38 × 63. */
 export type FramingStock = {
@@ -27,6 +36,10 @@ export type StockSize =
 export const stockLabel = (s: Stock): string =>
 	s.kind === "sheet" ? `${s.thickness} mm` : `${s.width} × ${s.depth}`;
 
+/** The size plus, for sheets, the material: "18 mm Plywood" or "38 × 63". */
+export const stockFullLabel = (s: Stock): string =>
+	s.kind === "sheet" ? `${stockLabel(s)} ${s.material}` : stockLabel(s);
+
 /** The dimensions a piece of this stock must have. */
 export const stockSize = (s: Stock): StockSize =>
 	s.kind === "sheet"
@@ -42,26 +55,39 @@ export const stockOfKind = <K extends PieceKind>(
 		(s): s is Extract<Stock, { kind: K }> => s.kind === kind,
 	);
 
+/** A stable number for a material name, so a name with no look of its own still gets the same one every time. */
+export function materialHash(material: string): number {
+	let hash = 0;
+	for (const ch of material) hash = (hash * 31 + ch.charCodeAt(0)) >>> 0;
+	return hash;
+}
+
 /** Sheets first, then framing: the order shown in the create wheel and the stock panel. */
 export const orderedStock = (stock: Record<Id, Stock>): Stock[] => [
 	...stockOfKind(stock, "sheet"),
 	...stockOfKind(stock, "framing"),
 ];
 
-/** An existing entry with exactly this size, if any. */
+/** True if every value given in `size` matches the stock's own. */
+export const sizeMatches = (s: Stock, size: Partial<StockSize>): boolean =>
+	Object.entries(size).every(
+		([k, v]) => (stockSize(s) as Record<string, number>)[k] === v,
+	);
+
+/** An existing entry like `like` (same kind and, for sheets, material) with exactly this size, if any. */
 export function findStock(
 	stock: Record<Id, Stock>,
-	kind: PieceKind,
+	like: Stock,
 	size: StockSize,
 ): Stock | undefined {
 	return Object.values(stock).find(
 		(s) =>
-			s.kind === kind &&
-			Object.entries(size).every(
-				([k, v]) => (s as unknown as Record<string, number>)[k] === v,
-			),
+			s.kind === like.kind && sameMaterial(s, like) && sizeMatches(s, size),
 	);
 }
+
+const sameMaterial = (a: Stock, b: Stock) =>
+	a.kind !== "sheet" || b.kind !== "sheet" || a.material === b.material;
 
 /** The pieces cut from one stock entry. */
 export type StockSection = { stock: Stock; pieces: Piece[] };

@@ -46,7 +46,7 @@ export function CreateWheel() {
 					<>
 						<StockSilhouette stock={s} />
 						<span className="font-condensed text-sm font-semibold uppercase leading-none tracking-[0.12em] group-data-active:font-bold">
-							{pieceName(s.kind)}
+							{sliceTitle(s)}
 						</span>
 						<span className="font-mono text-[11px] leading-none tabular-nums text-neutral-500 group-data-active:font-medium group-data-active:text-amber-300">
 							{stockLabel(s)}
@@ -57,7 +57,7 @@ export function CreateWheel() {
 			centre={
 				<>
 					<span className="font-condensed text-xs font-semibold uppercase leading-none tracking-[0.16em] text-neutral-500">
-						{target ? pieceName(target.kind) : ""}
+						{target ? sliceTitle(target) : ""}
 					</span>
 					<span className="font-mono text-base font-semibold leading-none tabular-nums text-neutral-800">
 						{creator.typed ? (
@@ -83,6 +83,10 @@ export function CreateWheel() {
 		/>
 	);
 }
+
+/** A sheet's material ("Plywood", "OSB"), so same-thickness sheets can be told apart; else "Timber". */
+const sliceTitle = (s: Stock) =>
+	s.kind === "sheet" ? s.material : pieceName(s.kind);
 
 /** A block scaled to the stock's section: a thin board for sheets, an end-on post for framing. */
 function StockSilhouette({ stock }: { stock: Stock }) {

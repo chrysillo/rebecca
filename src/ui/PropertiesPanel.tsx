@@ -12,8 +12,6 @@ import { Group, Panel } from "@/ui/Panel";
 const DIMENSION_LABEL: Record<string, string> = {
 	length: "Length",
 	width: "Width",
-	thickness: "Thickness",
-	depth: "Depth",
 };
 
 /** Top-right: numeric properties of the selected piece. */
@@ -30,7 +28,9 @@ export function PropertiesPanel() {
 	if (selected.length === 0) return null;
 	if (selected.length > 1)
 		return (
-			<Panel title={`${selected.length} pieces`}>
+			<Panel width="w-36" title={`${selected.length} pieces`}>
+				{/* TODO: truncate list or add a scroll when list too long cuz its
+				overflowing the page */}
 				<ul className="-mt-1 flex flex-col gap-0.5 text-xs text-neutral-700">
 					{selected.map((p) => (
 						<li key={p.id}>{p.name}</li>
@@ -113,8 +113,16 @@ function FaceProperties({ face, piece }: { face: FaceRef; piece: Piece }) {
 }
 
 function PieceProperties({ piece }: { piece: Piece }) {
+	const stock = useAppStore((s) => s.doc.stock[piece.stockId]);
 	return (
-		<Panel title={piece.name} width="w-44">
+		<Panel title={piece.name} width="w-36">
+			{stock && (
+				<p className="-mt-2 text-[11px] text-neutral-400">
+					{stock.kind === "sheet"
+						? `${stock.material} ${stock.thickness}mm`
+						: `${stock.width} × ${stock.depth}mm`}
+				</p>
+			)}
 			<Joints piece={piece} />
 			<div className="flex flex-col gap-1.5">
 				{dimensionEntries(piece).map((d) => (
@@ -125,6 +133,7 @@ function PieceProperties({ piece }: { piece: Piece }) {
 						greaterThan={0}
 						unit="mm"
 						smallLabel
+						smallValue
 						onCommit={
 							d.editable
 								? (v) => applyCommand(commands.setDimension(piece.id, d.key, v))

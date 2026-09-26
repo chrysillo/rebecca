@@ -1,5 +1,5 @@
 import { events as pointerEvents } from "@react-three/fiber";
-import { isGizmoObject } from "@/scene/gizmoStyle";
+import { isGizmoObject } from "@/scene/shared/gizmoStyle";
 
 /**
  * R3F's normal pointer events, but gizmo handles always come first: they're drawn on top of

@@ -3,13 +3,13 @@ import { type Aabb, pieceAabb } from "@/geometry/box";
 import { piecesOverlap } from "@/geometry/overlap";
 import type { ScreenPoint } from "@/input/pointer";
 import { toScreen } from "@/input/screen";
+import { wheelBeside } from "@/input/wheelPlacement";
 import { pieceSize } from "@/model/dimensions";
 import type { Id, Piece } from "@/model/types";
 import type { DocumentState } from "@/state/document";
 import type { JoinerState } from "@/state/joiner";
 import { selectedPieces } from "@/state/selectors";
 import { useAppStore } from "@/state/store";
-import { wheelBeside } from "@/ui/components/RadialMenu";
 
 const store = () => useAppStore.getState();
 
@@ -30,7 +30,7 @@ export function toolsFor(doc: DocumentState, target: Id): Id[] {
 		.map((p) => p.id);
 }
 
-/** Room (mm) kept around a joint for the preview, which pulls the cutting piece clear of it. */
+/** Room (mm) kept clear around a joint, so the wheel never sits over the preview. */
 const JOINT_MARGIN = 120;
 
 /**

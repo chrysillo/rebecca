@@ -1,7 +1,6 @@
 import { commands } from "@/commands";
 import type { Action } from "@/input/keymap";
 import { lastPointer } from "@/input/pointer";
-import { exportViews } from "@/scene/ViewExporter";
 import {
 	closeTab,
 	cycleTab,
@@ -9,11 +8,13 @@ import {
 	useProjectsStore,
 } from "@/state/projects";
 import { useAppStore } from "@/state/store";
+import { cancelBoxSelect } from "@/tools/boxSelectSession";
+import { viewFace } from "@/tools/cameraViews";
 import { cancelCreator, openCreator } from "@/tools/creatorSession";
+import { exportCutList, exportViews } from "@/tools/exports";
 import { startExtrude } from "@/tools/extrudeSession";
 import { cancelJoiner, openJoiner } from "@/tools/joinSession";
 import { cancelMeasure } from "@/tools/measureSession";
-import { exportCutList } from "@/ui/exports";
 
 const store = () => useAppStore.getState();
 
@@ -29,6 +30,10 @@ export const ACTIONS: Record<Action, () => void> = {
 	extrude: startExtrude,
 	// Opens the join wheel at the mouse to pick which overlapping piece gets cut.
 	join: () => (store().joiner ? cancelJoiner() : openJoiner(lastPointer())),
+	viewFront: () => viewFace("Front"),
+	viewLeft: () => viewFace("Left"),
+	viewRight: () => viewFace("Right"),
+	viewTop: () => viewFace("Top"),
 	exportCutList,
 	exportViews,
 	// Groups the selection; if it's already exactly one group, ungroups it (so the button toggles).
@@ -44,8 +49,9 @@ export const ACTIONS: Record<Action, () => void> = {
 	undo: () => store().undo(),
 	redo: () => store().redo(),
 	escape: () => {
-		// Escape closes the wheel, a half-made measurement or a drag first; otherwise it deselects.
+		// Escape closes the wheel, a selection box, a half-made measurement or a drag first; otherwise it deselects.
 		if (store().creator) cancelCreator();
+		else if (cancelBoxSelect()) return;
 		else if (store().joiner) cancelJoiner();
 		else if (cancelMeasure()) return;
 		else if (store().drag) store().setDrag(null);
@@ -58,4 +64,6 @@ export const ACTIONS: Record<Action, () => void> = {
 		const { active } = useProjectsStore.getState();
 		if (active) void closeTab(active);
 	},
+	// Toggles, so "?" closes the list too. (Escape is handled by the list itself.)
+	shortcuts: () => store().setShortcutsOpen(!store().shortcutsOpen),
 };

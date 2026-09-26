@@ -5,6 +5,10 @@ export type Action =
 	| "measureTool"
 	| "extrude"
 	| "join"
+	| "viewFront"
+	| "viewLeft"
+	| "viewRight"
+	| "viewTop"
 	| "exportCutList"
 	| "exportViews"
 	| "group"
@@ -17,7 +21,8 @@ export type Action =
 	| "newProject"
 	| "nextProject"
 	| "prevProject"
-	| "closeProject";
+	| "closeProject"
+	| "shortcuts";
 
 /**
  * A key, matched by physical position (`KeyboardEvent.code`) so Alt/Option doesn't change it.
@@ -41,6 +46,11 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 	measureTool: [{ code: "KeyT", mod: false }],
 	extrude: [{ code: "KeyE", mod: false }],
 	join: [{ code: "KeyJ", mod: false }],
+	// Match the ViewCube's face order: front, left, right, top.
+	viewFront: [{ code: "Digit1", mod: false }],
+	viewLeft: [{ code: "Digit2", mod: false }],
+	viewRight: [{ code: "Digit3", mod: false }],
+	viewTop: [{ code: "Digit4", mod: false }],
 	group: [{ code: "KeyG", mod: true, shift: false }],
 	ungroup: [{ code: "KeyG", mod: true, shift: true }],
 	exportViews: [{ code: "KeyP", alt: true, mod: false }],
@@ -58,6 +68,8 @@ export const KEYMAP: Record<Action, KeyBinding[]> = {
 	nextProject: [{ code: "BracketRight", alt: true, mod: false }],
 	prevProject: [{ code: "BracketLeft", alt: true, mod: false }],
 	closeProject: [{ code: "KeyW", alt: true, mod: false }],
+	// "?", as on GitHub and Gmail.
+	shortcuts: [{ code: "Slash", shift: true, mod: false }],
 };
 
 const isMac =
@@ -90,16 +102,30 @@ const KEY_NAMES: Record<string, string> = {
 	Escape: "Esc",
 	BracketLeft: "[",
 	BracketRight: "]",
+	Slash: "/",
 };
 
-/** Human-readable shortcut for an action, e.g. "V", "⌘Z", "⇧⌘Z" (or "Ctrl+Z" off macOS). */
-export function shortcutLabel(action: Action): string {
-	const b = KEYMAP[action][0];
-	const key = KEY_NAMES[b.code] ?? b.code.replace(/^Key|^Digit/, "");
+/** Keys whose shifted character is what people call them, shown instead of "⇧" + the key. */
+const SHIFTED_NAMES: Record<string, string> = { Slash: "?" };
+
+/** How a modifier is written on this platform: symbols on macOS, words elsewhere. */
+export const MODIFIER_NAMES = isMac
+	? { shift: "⇧", alt: "⌥", mod: "⌘" }
+	: { shift: "Shift", alt: "Alt", mod: "Ctrl" };
+
+/** Human-readable key combination, e.g. "V", "⌘Z", "⇧⌘Z" (or "Shift+Ctrl+Z" off macOS). */
+export function bindingLabel(b: KeyBinding): string {
+	const shifted = b.shift ? SHIFTED_NAMES[b.code] : undefined;
+	const key = shifted ?? KEY_NAMES[b.code] ?? b.code.replace(/^Key|^Digit/, "");
+	const joiner = isMac ? "" : "+";
 	const parts = [
-		b.shift ? (isMac ? "⇧" : "Shift+") : "",
-		b.alt ? (isMac ? "⌥" : "Alt+") : "",
-		b.mod ? (isMac ? "⌘" : "Ctrl+") : "",
-	];
-	return parts.join("") + key;
+		b.shift && !shifted ? MODIFIER_NAMES.shift : "",
+		b.alt ? MODIFIER_NAMES.alt : "",
+		b.mod ? MODIFIER_NAMES.mod : "",
+	].filter(Boolean);
+	return [...parts, key].join(joiner);
 }
+
+/** The shortcut shown for an action in tooltips and menus: its first binding. */
+export const shortcutLabel = (action: Action): string =>
+	bindingLabel(KEYMAP[action][0]);

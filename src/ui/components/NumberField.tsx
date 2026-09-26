@@ -10,6 +10,8 @@ type Props = {
 	unit?: string;
 	/** Shrinks the label to match a Group title (11px) instead of the normal 13px. */
 	smallLabel?: boolean;
+	/** Shrinks the value to 10px, matching the sizes in the object list. */
+	smallValue?: boolean;
 };
 
 /** A numeric input that edits a draft and commits on Enter/blur. Escape reverts. Read-only without onCommit. */
@@ -20,6 +22,7 @@ export function NumberField({
 	greaterThan,
 	unit,
 	smallLabel = false,
+	smallValue = false,
 }: Props) {
 	const display = formatNumber(value);
 	const [draft, setDraft] = useState(display);
@@ -39,16 +42,16 @@ export function NumberField({
 
 	return (
 		<label
-			className={`grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 ${smallLabel ? "text-[11px]" : "text-[13px]"}`}
+			className={`grid ${smallValue ? "grid-cols-[minmax(0,1fr)_4.5rem]" : "grid-cols-[minmax(0,1fr)_6rem]"} items-center gap-2 ${smallLabel ? "text-[11px]" : "text-[13px]"}`}
 		>
 			<span className={readOnly ? "text-neutral-400" : "text-neutral-600"}>
 				{label}
 			</span>
 			<span className="relative block">
 				<input
-					className={`h-7 w-full rounded-md border px-2 text-right font-mono text-xs font-medium tabular-nums ${
-						unit ? "pr-7" : ""
-					} ${
+					className={`h-7 w-full rounded-md border px-2 text-right font-mono font-medium tabular-nums ${
+						smallValue ? "text-[10px]" : "text-xs"
+					} ${unit ? "pr-7" : ""} ${
 						readOnly
 							? "border-[#ececec] bg-transparent text-neutral-400"
 							: "border-transparent bg-neutral-100 text-neutral-800 focus:border-amber-500 focus:bg-white focus:outline-none"
@@ -69,9 +72,9 @@ export function NumberField({
 				/>
 				{unit && (
 					<span
-						className={`pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[11px] ${
-							readOnly ? "text-neutral-300" : "text-neutral-400"
-						}`}
+						className={`pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 ${
+							smallValue ? "text-[10px]" : "text-[11px]"
+						} ${readOnly ? "text-neutral-300" : "text-neutral-400"}`}
 					>
 						{unit}
 					</span>

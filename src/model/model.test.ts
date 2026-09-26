@@ -1,12 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { commands } from "@/commands";
 import { cutListKey } from "@/model/cutListKey";
+import {
+	defaultGroupName,
+	expandToGroups,
+	type Group,
+	groupsWithin,
+	pruneGroups,
+} from "@/model/group";
 import { defaultName } from "@/model/naming";
 import {
 	findStock,
 	identicalRuns,
 	orderedStock,
 	type Stock,
+	sizeMatches,
 	stockSections,
 } from "@/model/stock";
 import { docWith, rail, sheet } from "@/test/fixtures";
@@ -33,6 +41,12 @@ describe("cutListKey", () => {
 			cutListKey(rail()),
 		);
 	});
+
+	it("separates the same cut from different stock (e.g. plywood and OSB)", () => {
+		expect(cutListKey(sheet({ stockId: "osb-18" }))).not.toBe(
+			cutListKey(sheet()),
+		);
+	});
 });
 
 describe("defaultName", () => {
@@ -50,18 +64,29 @@ describe("defaultName", () => {
 describe("stock lookups", () => {
 	const stock: Record<string, Stock> = {
 		f: { id: "f", kind: "framing", width: 38, depth: 63 },
-		s: { id: "s", kind: "sheet", thickness: 18 },
+		s: { id: "s", kind: "sheet", material: "Plywood", thickness: 18 },
+		o: { id: "o", kind: "sheet", material: "OSB", thickness: 18 },
 	};
 
 	it("finds an entry by exact size and kind", () => {
-		expect(findStock(stock, "framing", { width: 38, depth: 63 })?.id).toBe("f");
-		expect(
-			findStock(stock, "framing", { width: 38, depth: 64 }),
-		).toBeUndefined();
+		expect(findStock(stock, stock.f, { width: 38, depth: 63 })?.id).toBe("f");
+		expect(findStock(stock, stock.f, { width: 38, depth: 64 })).toBeUndefined();
+	});
+
+	it("finds sheets of the same material only", () => {
+		expect(findStock(stock, stock.o, { thickness: 18 })?.id).toBe("o");
+		expect(findStock(stock, stock.s, { thickness: 18 })?.id).toBe("s");
+		expect(findStock(stock, stock.o, { thickness: 12 })).toBeUndefined();
+	});
+
+	it("matches only the size values given", () => {
+		expect(sizeMatches(stock.f, { width: 38 })).toBe(true);
+		expect(sizeMatches(stock.f, { width: 38, depth: 90 })).toBe(false);
+		expect(sizeMatches(stock.s, { thickness: 18 })).toBe(true);
 	});
 
 	it("lists sheets before framing", () => {
-		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "f"]);
+		expect(orderedStock(stock).map((s) => s.id)).toEqual(["s", "o", "f"]);
 	});
 });
 
@@ -93,5 +118,31 @@ describe("identicalRuns", () => {
 		expect(
 			identicalRuns(section.pieces).map((run) => run.map((p) => p.id)),
 		).toEqual([["a", "c"], ["b"]]);
+	});
+});
+
+describe("groups", () => {
+	const groups: Record<string, Group> = {
+		g: { id: "g", name: "Group 2", pieceIds: ["a", "b"] },
+	};
+
+	it("expands ids to whole groups, in order, without repeats", () => {
+		expect(expandToGroups(groups, ["c", "b", "a"])).toEqual(["c", "a", "b"]);
+	});
+
+	it("finds groups wholly inside a set of ids", () => {
+		expect(groupsWithin(groups, ["a"])).toEqual([]);
+		expect(groupsWithin(groups, ["a", "b", "c"]).map((g) => g.id)).toEqual([
+			"g",
+		]);
+	});
+
+	it("names the next group after the highest number", () => {
+		expect(defaultGroupName(groups)).toBe("Group 3");
+	});
+
+	it("drops missing pieces and groups left with fewer than two", () => {
+		expect(pruneGroups(groups, () => true)).toBe(groups);
+		expect(pruneGroups(groups, (id) => id !== "b")).toEqual({});
 	});
 });

@@ -1,12 +1,13 @@
 import { Grid, Line } from "@react-three/drei";
 import { useMemo } from "react";
+import { FLOOR_AXIS_COLOR } from "@/colors";
 import { piecesAabb } from "@/geometry/box";
 import { useAppStore } from "@/state/store";
 
 const SECTION = 1000;
-export const AXIS_X = "#df7468";
-export const AXIS_Y = "#5fae74";
-export const AXIS_Z = "#5b8fd6";
+/** Grid lines: fine cells and the darker lines every metre. */
+const CELL_COLOR = "#dedede";
+const SECTION_COLOR = "#c6c6c6";
 /** Grid shown around the pieces, beyond their extent, in mm. */
 const MARGIN = 1000;
 /** Half-size of the grid when the scene is empty. */
@@ -35,10 +36,10 @@ export function Floor() {
 				rotation={[Math.PI / 2, 0, 0]}
 				cellSize={100}
 				cellThickness={0.6}
-				cellColor="#dedede"
+				cellColor={CELL_COLOR}
 				sectionSize={SECTION}
 				sectionThickness={1}
-				sectionColor="#c6c6c6"
+				sectionColor={SECTION_COLOR}
 				fadeDistance={1e6}
 			/>
 			{/* World axes on the floor, where the grid covers them: X red, Y green. */}
@@ -48,7 +49,7 @@ export function Floor() {
 						[x0, 0, 0.5],
 						[x1, 0, 0.5],
 					]}
-					color={AXIS_X}
+					color={FLOOR_AXIS_COLOR.x}
 					transparent
 					opacity={0.7}
 					lineWidth={1.5}
@@ -60,7 +61,7 @@ export function Floor() {
 						[0, y0, 0.5],
 						[0, y1, 0.5],
 					]}
-					color={AXIS_Y}
+					color={FLOOR_AXIS_COLOR.y}
 					transparent
 					opacity={0.7}
 					lineWidth={1.5}

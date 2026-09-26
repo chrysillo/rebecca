@@ -16,7 +16,19 @@ export const addMeasurement =
 		const id = newId();
 		return {
 			...doc,
-			measurements: { ...doc.measurements, [id]: { id, from, to } },
+			measurements: { ...doc.measurements, [id]: { id, from, to, at: 0.5 } },
+		};
+	};
+
+/** Slides a measurement along its edges (`at`: 0 to 1 along the first edge). */
+export const moveMeasurement =
+	(id: Id, at: number): Command =>
+	(doc) => {
+		const m = doc.measurements[id];
+		if (!m || m.at === at) return doc;
+		return {
+			...doc,
+			measurements: { ...doc.measurements, [id]: { ...m, at } },
 		};
 	};
 

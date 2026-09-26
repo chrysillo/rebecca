@@ -138,6 +138,16 @@ describe("stock", () => {
 		}
 	});
 
+	it("renames a sheet's material, refusing blanks and framing", () => {
+		const doc = docWith([sheet()]);
+		const next = commands.setStockMaterial("sheet-18", " OSB ")(doc);
+		expect(next.stock["sheet-18"]).toMatchObject({ material: "OSB" });
+		expect(next.pieces.sheet).toBe(doc.pieces.sheet);
+		expect(commands.setStockMaterial("sheet-18", "  ")(doc)).toBe(doc);
+		expect(commands.setStockMaterial("sheet-18", "Plywood")(doc)).toBe(doc);
+		expect(commands.setStockMaterial("rail-38x63", "Oak")(doc)).toBe(doc);
+	});
+
 	it("refuses to remove a size that's still in use", () => {
 		const doc = docWith([rail()]);
 		expect(commands.removeStock("rail-38x63")(doc)).toBe(doc);
@@ -195,6 +205,18 @@ describe("measurements", () => {
 		expect(
 			Object.keys(commands.removeMeasurement(m.id)(added).measurements),
 		).toHaveLength(0);
+	});
+
+	it("slides a measurement along its edges", () => {
+		const doc = commands.addMeasurement(
+			xEnd("a"),
+			xStart("b"),
+		)(docWith([rail({ id: "a" }), rail({ id: "b" })]));
+		const [m] = Object.values(doc.measurements);
+		expect(m.at).toBe(0.5);
+		const moved = commands.moveMeasurement(m.id, 0.2)(doc);
+		expect(moved.measurements[m.id].at).toBe(0.2);
+		expect(commands.moveMeasurement(m.id, 0.2)(moved)).toBe(moved);
 	});
 
 	it("ignores measuring an edge against itself", () => {

@@ -1,16 +1,18 @@
 import { usePointerTracking } from "@/input/pointer";
 import { useKeybindings } from "@/input/useKeybindings";
 import { Viewport } from "@/scene/Viewport";
+import { BoxSelectRect } from "@/ui/BoxSelectRect";
 import { ContextMenu } from "@/ui/ContextMenu";
 import { CreateWheel } from "@/ui/CreateWheel";
 import { ExportBar } from "@/ui/ExportBar";
 import { JoinWheel } from "@/ui/JoinWheel";
-import { KeyHints } from "@/ui/KeyHints";
 import { Notice } from "@/ui/Notice";
-import { Outliner } from "@/ui/Outliner";
+import { Outliner } from "@/ui/outliner/Outliner";
 import { ProjectTabs } from "@/ui/ProjectTabs";
 import { PropertiesPanel } from "@/ui/PropertiesPanel";
 import { StockPanel } from "@/ui/StockPanel";
+import { ShortcutsButton } from "@/ui/shortcuts/ShortcutsButton";
+import { ShortcutsDialog } from "@/ui/shortcuts/ShortcutsDialog";
 import { ToolStrip } from "@/ui/ToolStrip";
 
 export function App() {
@@ -26,7 +28,7 @@ export function App() {
 					<div className="pointer-events-auto relative z-20">
 						<ToolStrip />
 					</div>
-					{/* Scrolls rather than running into the hint strip at the bottom. */}
+					{/* Scrolls rather than running into the shortcuts button at the bottom. */}
 					<div className="pointer-events-auto flex max-h-[calc(100vh-4.5rem)] flex-col gap-3 overflow-y-auto">
 						<StockPanel />
 						<Outliner />
@@ -43,8 +45,8 @@ export function App() {
 					</div>
 				</div>
 			</div>
-			<div className="pointer-events-none absolute bottom-3 left-3">
-				<KeyHints />
+			<div className="absolute bottom-3 left-3">
+				<ShortcutsButton />
 			</div>
 			<div className="pointer-events-none absolute inset-x-0 top-3 flex justify-center">
 				<div className="pointer-events-auto">
@@ -54,7 +56,9 @@ export function App() {
 			<CreateWheel />
 			<JoinWheel />
 			<Notice />
+			<BoxSelectRect />
 			<ContextMenu />
+			<ShortcutsDialog />
 		</div>
 	);
 }

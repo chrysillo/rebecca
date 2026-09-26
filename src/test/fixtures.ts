@@ -8,6 +8,7 @@ import { type DocumentState, emptyDocument } from "@/state/document";
 export const SHEET_18: SheetStock = {
 	id: "sheet-18",
 	kind: "sheet",
+	material: "Plywood",
 	thickness: 18,
 };
 export const RAIL_38x63: FramingStock = {

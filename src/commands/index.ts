@@ -7,7 +7,11 @@ import {
 	ungroupSelection,
 } from "@/commands/groups";
 import { flipJoint, joinInto, removeJoint } from "@/commands/joints";
-import { addMeasurement, removeMeasurement } from "@/commands/measurements";
+import {
+	addMeasurement,
+	moveMeasurement,
+	removeMeasurement,
+} from "@/commands/measurements";
 import {
 	addPiece,
 	deletePieces,
@@ -30,6 +34,7 @@ import {
 	addStock,
 	removeStock,
 	setPieceStock,
+	setStockMaterial,
 	updateStock,
 } from "@/commands/stock";
 import { setTransforms } from "@/commands/transform";
@@ -44,6 +49,7 @@ export const commands = {
 	joinInto,
 	removeJoint,
 	addMeasurement,
+	moveMeasurement,
 	removeMeasurement,
 	addPiece,
 	deletePieces,
@@ -64,4 +70,5 @@ export const commands = {
 	updateStock,
 	removeStock,
 	setPieceStock,
+	setStockMaterial,
 };

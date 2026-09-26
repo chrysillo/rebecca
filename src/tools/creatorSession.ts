@@ -55,7 +55,7 @@ export function cycle(step: 1 | -1) {
 
 /**
  * The stock a confirm would use: the highlighted entry, or — when a different size was typed —
- * the matching existing entry of that kind, or a brand-new one.
+ * the matching existing entry of that kind (and sheet material), or a brand-new one like it.
  */
 export function resolveStock(): Stock | null {
 	const { creator, doc } = store();
@@ -64,8 +64,8 @@ export function resolveStock(): Stock | null {
 	const size = typedSize(highlighted.kind, creator.typed);
 	if (!size) return highlighted;
 	return (
-		findStock(doc.stock, highlighted.kind, size) ??
-		({ id: newId(), kind: highlighted.kind, ...size } as Stock)
+		findStock(doc.stock, highlighted, size) ??
+		({ ...highlighted, id: newId(), ...size } as Stock)
 	);
 }
 

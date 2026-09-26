@@ -62,7 +62,7 @@ export function JoinWheel() {
 					</span>
 				</>
 			}
-			hint="Amber piece gets cut · red is removed from it · release J / click to cut · scroll or J to switch · Esc"
+			hint="Amber piece gets cut · hatched pieces are hidden to show it · release J / click to cut · scroll or J to switch · Esc"
 			backdrop={false}
 		/>
 	);

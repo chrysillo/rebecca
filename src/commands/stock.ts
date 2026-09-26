@@ -2,7 +2,12 @@ import { addPiece } from "@/commands/pieces";
 import { CONFIG } from "@/config";
 import { resizePiece } from "@/geometry/resize";
 import { createFraming, createSheet } from "@/model/createPiece";
-import { type Stock, type StockSize, stockSize } from "@/model/stock";
+import {
+	type Stock,
+	type StockSize,
+	sizeMatches,
+	stockSize,
+} from "@/model/stock";
 import type { Id, Piece } from "@/model/types";
 import type { Command } from "@/state/document";
 
@@ -21,17 +26,26 @@ export const updateStock =
 		)
 			return doc;
 		const next = { ...current, ...size } as Stock;
-		if (
-			Object.entries(size).every(
-				([k, v]) => (current as unknown as Record<string, number>)[k] === v,
-			)
-		)
-			return doc;
+		if (sizeMatches(current, size)) return doc;
 		const pieces = { ...doc.pieces };
 		for (const piece of Object.values(doc.pieces))
 			if (piece.stockId === id)
 				pieces[piece.id] = resizePiece(piece, stockSize(next));
 		return { ...doc, stock: { ...doc.stock, [id]: next }, pieces };
+	};
+
+/** Renames a sheet's material (e.g. "Plywood" to "OSB"). Blank names are refused. */
+export const setStockMaterial =
+	(id: Id, material: string): Command =>
+	(doc) => {
+		const current = doc.stock[id];
+		const name = material.trim();
+		if (current?.kind !== "sheet" || !name || name === current.material)
+			return doc;
+		return {
+			...doc,
+			stock: { ...doc.stock, [id]: { ...current, material: name } },
+		};
 	};
 
 export const stockInUse = (pieces: Record<Id, Piece>, id: Id): number =>

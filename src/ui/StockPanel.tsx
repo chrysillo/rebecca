@@ -1,3 +1,4 @@
+import { useId, useRef, useState } from "react";
 import { commands } from "@/commands";
 import { stockInUse } from "@/commands/stock";
 import { newId } from "@/model/createPiece";
@@ -7,6 +8,12 @@ import type { Id, PieceKind } from "@/model/types";
 import { applyCommand, useAppStore } from "@/state/store";
 import { NumberField } from "@/ui/components/NumberField";
 import { Group, Panel } from "@/ui/Panel";
+
+/** The material a new sheet entry starts as. */
+const DEFAULT_MATERIAL = "Plywood";
+
+/** Offered while typing a sheet's material; any other name is fine too. */
+const MATERIALS = ["Plywood", "OSB"];
 
 /** Common sizes offered, in order, when adding a new entry (first one not already in the project). */
 const SUGGESTED: { sheet: number[]; framing: [number, number][] } = {
@@ -21,8 +28,8 @@ const SUGGESTED: { sheet: number[]; framing: [number, number][] } = {
 };
 
 /**
- * The project's sheet thicknesses and framing sections. Editing a value resizes every piece
- * cut from it; an entry can only be removed once nothing uses it.
+ * The project's sheets (material and thickness) and framing sections. Editing a size resizes
+ * every piece cut from it; an entry can only be removed once nothing uses it.
  */
 export function StockPanel() {
 	const stock = useAppStore((s) => s.doc.stock);
@@ -59,13 +66,21 @@ function StockRow({ stock, used }: { stock: Stock; used: number }) {
 		<div className="flex items-start gap-1">
 			<div className="flex flex-1 flex-col gap-1.5">
 				{stock.kind === "sheet" ? (
-					<NumberField
-						label="Thickness"
-						value={stock.thickness}
-						greaterThan={0}
-						unit="mm"
-						onCommit={(thickness) => update({ thickness })}
-					/>
+					<>
+						<MaterialField
+							value={stock.material}
+							onCommit={(material) =>
+								applyCommand(commands.setStockMaterial(stock.id, material))
+							}
+						/>
+						<NumberField
+							label="Thickness"
+							value={stock.thickness}
+							greaterThan={0}
+							unit="mm"
+							onCommit={(thickness) => update({ thickness })}
+						/>
+					</>
 				) : (
 					<>
 						<NumberField
@@ -108,12 +123,106 @@ function StockRow({ stock, used }: { stock: Stock; used: number }) {
 	);
 }
 
-/** A new entry with the first common size the project doesn't have yet. */
+/** Picked from the dropdown to type a material that isn't listed. */
+const OTHER = "__other__";
+
+const FIELD_CLASS =
+	"h-7 w-full rounded-md border border-transparent bg-neutral-100 px-2 text-xs font-medium text-neutral-800 focus:border-amber-500 focus:bg-white focus:outline-none";
+
+/**
+ * A sheet's material: a dropdown of common ones, plus "Other…" to type any name (Enter/blur
+ * saves, Escape goes back to the dropdown). A custom name stays in the list once set.
+ */
+function MaterialField({
+	value,
+	onCommit,
+}: {
+	value: string;
+	onCommit: (material: string) => void;
+}) {
+	const [typing, setTyping] = useState(false);
+	const id = useId();
+	const options = MATERIALS.includes(value) ? MATERIALS : [...MATERIALS, value];
+
+	return (
+		<div className="grid grid-cols-[minmax(0,1fr)_6rem] items-center gap-2 text-[13px]">
+			<label htmlFor={id} className="text-neutral-600">
+				Material
+			</label>
+			{typing ? (
+				<CustomMaterialInput
+					id={id}
+					onCommit={onCommit}
+					onDone={() => setTyping(false)}
+				/>
+			) : (
+				<select
+					id={id}
+					className={FIELD_CLASS}
+					value={value}
+					onChange={(e) => {
+						if (e.target.value === OTHER) setTyping(true);
+						else onCommit(e.target.value);
+					}}
+				>
+					{options.map((m) => (
+						<option key={m} value={m}>
+							{m}
+						</option>
+					))}
+					<option value={OTHER}>Other…</option>
+				</select>
+			)}
+		</div>
+	);
+}
+
+function CustomMaterialInput({
+	id,
+	onCommit,
+	onDone,
+}: {
+	id: string;
+	onCommit: (material: string) => void;
+	onDone: () => void;
+}) {
+	const [draft, setDraft] = useState("");
+	const cancelled = useRef(false);
+
+	return (
+		<input
+			id={id}
+			className={FIELD_CLASS}
+			placeholder="Material"
+			value={draft}
+			// biome-ignore lint/a11y/noAutofocus: the field only appears when the user picks "Other…".
+			autoFocus
+			onChange={(e) => setDraft(e.target.value)}
+			onKeyDown={(e) => {
+				if (e.key === "Enter") e.currentTarget.blur();
+				if (e.key === "Escape") {
+					cancelled.current = true;
+					e.currentTarget.blur();
+				}
+			}}
+			onBlur={() => {
+				if (!cancelled.current && draft.trim()) onCommit(draft);
+				onDone();
+			}}
+		/>
+	);
+}
+
+/** A new entry with the first common size the project doesn't have yet (sheets: in plywood). */
 function suggest(stock: Record<Id, Stock>, kind: PieceKind): Stock {
 	if (kind === "sheet") {
-		const have = new Set(stockOfKind(stock, "sheet").map((s) => s.thickness));
+		const have = new Set(
+			stockOfKind(stock, "sheet")
+				.filter((s) => s.material === DEFAULT_MATERIAL)
+				.map((s) => s.thickness),
+		);
 		const thickness = SUGGESTED.sheet.find((t) => !have.has(t)) ?? 18;
-		return { id: newId(), kind, thickness };
+		return { id: newId(), kind, material: DEFAULT_MATERIAL, thickness };
 	}
 	const have = new Set(
 		stockOfKind(stock, "framing").map((s) => `${s.width}x${s.depth}`),

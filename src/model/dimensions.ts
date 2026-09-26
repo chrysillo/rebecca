@@ -31,8 +31,10 @@ const AXIS_DIMENSION = {
 };
 
 /** The dimension a local axis measures, e.g. a sheet's local Z is its thickness. */
-export const dimensionAlong = (kind: PieceKind, axis: Axis): string =>
-	AXIS_DIMENSION[kind][axis];
+export const dimensionAlong = (
+	kind: PieceKind,
+	axis: Axis,
+): SheetDimension | FramingDimension => AXIS_DIMENSION[kind][axis];
 
 /**
  * Size of the piece's box along its local X, Y, Z axes.
@@ -71,13 +73,8 @@ export function dimensionEntries(piece: Piece): DimensionEntry[] {
 			return [
 				{ key: "length", value: piece.length, editable: true },
 				{ key: "width", value: piece.width, editable: true },
-				{ key: "thickness", value: piece.thickness, editable: false },
 			];
 		case "framing":
-			return [
-				{ key: "length", value: piece.length, editable: true },
-				{ key: "width", value: piece.width, editable: false },
-				{ key: "depth", value: piece.depth, editable: false },
-			];
+			return [{ key: "length", value: piece.length, editable: true }];
 	}
 }
